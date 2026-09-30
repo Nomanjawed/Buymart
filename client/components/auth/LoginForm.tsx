@@ -3,9 +3,11 @@
 import { Eye, EyeOff } from 'lucide-react'
 import axios from 'axios'
 import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { login } from '@/utils/api'
 
 export default function LoginForm() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -26,7 +28,7 @@ export default function LoginForm() {
 
     try {
       await login(email.trim(), password)
-      setMessage('Signed in successfully.')
+      router.replace('/dashboard')
     } catch (error) {
       const responseBody = axios.isAxiosError<{ message?: unknown; error?: unknown }>(error)
         ? error.response?.data

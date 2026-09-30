@@ -5,11 +5,11 @@ import Cookies from 'js-cookie';
 // Authentication
 export const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    const result = data?.data ;
-    const token = result?.token 
+    const result = data?.data ?? data;
+    const token = result?.token ?? result?.accessToken;
 
     if (typeof token === 'string' && token.length > 0) {
-        Cookies.set('token', token, { expires: 7 });
+        Cookies.set('token', token, { expires: 7, path: '/' });
     }
 
     return result?.user ?? result;
