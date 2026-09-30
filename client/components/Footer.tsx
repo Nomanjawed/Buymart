@@ -1,40 +1,54 @@
 import React from 'react'
 
+
+
 const Footer = () => {
-
-const navItems =[
-    { name: "Home", path: "/" },
-    { name: "Categories", path: "/categories" },
-    { name: "Contact", path: "/contact" },
-    { name: "Login", path: "/login" },
-   
-
-]
-
   return (
-    <header className="bg-gray-800 text-white p-4">
-      <div className="mx-10 flex justify-between items-center">
-        <div className="text-lg font-bold ">My E-commerce</div>
-        <nav>
-          <ul className="flex gap-4">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <a href={item.path} className="hover:text-gray-300">
-                  {item.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+    <div>
+ <div className= "flex w-full bg-slate-100 px-10 py-10">
 
-
-        <div className='flex gap-4'>
-            <h1>Register</h1>
-            <h1>CArt</h1>
-        </div>
+      <div className= " flex flex-col w-1/4">
+      
+     <div>BuyMart</div>
+      
       </div>
-    </header>
+
+      <div className= " flex flex-col w-1/4">
+      
+      <span>Home</span>
+      <span>About</span>
+      <span>Categories</span>
+      <span>Contact Us</span>
+      
+      </div>
+      <div className= " flex flex-col w-1/4">
+      
+      <span>privacy policy</span>
+      <span>return policy</span>
+      <span>terms & condition</span>
+            
+      </div>
+      <div className= " flex flex-col w-1/4">
+      
+      <span>Instagram</span>
+      <span>Facebook</span>
+      <span>Tiktok</span>
+      <span>X</span>
+            
+      </div>
+
+
+    </div>
+
+    <div className=''>
+<h1 className='text-center'>All Rights reserved @buymart.com 2026</h1>
+    </div>
+
+    </div>
+   
   )
+
+
 }
 
 export default Footer

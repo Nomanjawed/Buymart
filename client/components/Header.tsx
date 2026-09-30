@@ -8,7 +8,7 @@ const navItems =[
     { name: "HOME", path: "/" },
     { name: "CATEGORIES", path: "/categories" },
     { name: "CONTACT", path: "/contact" },
-    { name: "LOGIN", path: "/login" },
+    { name: "LOGIN", path: "/auth" },
    
 
 ]

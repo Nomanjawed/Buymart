@@ -1,117 +1,97 @@
-"use client";
 import Image from "next/image";
-import React, { useState } from "react";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const Categories = () => {
-  
   const categories = [
-    { name: "Cars", path: "/", image: "/car.jpg" },
-    { name: "Bikes", path: "/", image: "/bike.png" },
-    { name: "Aircraft", path: "/", image: "/airplane.jpg" },
-    { name: "Fighter Jets", path: "/", image: "/fighter_jett.jpg" },
-    { name: "Chess", path: "/", image: "/chess.jpg" },
-    { name: "Ships", path: "/", image: "" },
-    { name: "Architecture", path: "/", image: "/architecture.jpg" },
-    { name: "Character", path: "/", image: "/character.jpg" },
+    { name: "Cars",  image: "/car.jpg" },
+    { name: "Bikes",  image: "/bike.png" },
+    { name: "Aircraft",  image: "/airplane.jpg" },
+    { name: "Fighter Jets",  image: "/fighter_jett.jpg" },
+    { name: "Chess",  image: "/chess.jpg" },
+    { name: "Ships",  image: null },
+    { name: "Architecture",  image: "/architecture.jpg" },
+    { name: "Character",  image: "/character.jpg" },
   ];
 
   const featuredProducts = [
-    { name: "Cars", path: "/" },
-    { name: "Aircraft", path: "/" },
-    { name: "Architecture", path: "/" },
-    { name: "Character", path: "/" },
+    { name: "Cars",  image: "/car.jpg" },
+    { name: "Aircraft",  image: "/airplane.jpg" },
+    { name: "Architecture",  image: "/architecture.jpg" },
+    { name: "Character", image: "/character.jpg" },
   ];
 
   return (
-    <div className="h-full">
-      
-                            {/* // SHOP BY CATEGORIES */}
+    <section className="w-full py-12 md:py-16 mt-25 ">
 
-      <div className="px-10 py-10 text-2xl mt-8 text-center text font-semibold">
-        <h1>SHOP BY CATEGORIES</h1>
+                                 {/* CHOOSE YOUR WORLD */}
+      <div className="mb-8 px-5 text-center md:mb-10">
+        <h2 className="text-2xl font-semibold md:text-3xl">Choose Your World</h2>
       </div>
 
       <div
-        className="
-      flex overflow-x-auto px-2 md:px-6 py-2 gap-6 md:gap-12 scrollbar-none [&::-webkit-scrollbar]:hidden select-none shrink-0  "
+        aria-label="Shop by category"
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-3 md:gap-6 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {categories.map(() => (
-          <Card className="relative mx-auto bg-amber-100 w-[250px] h-[300px]  pt-0 shrink-0">
-            <div className="absolute inset-0 z-30 aspect-video bg-black/35" />
-            <Image
-              src="/car.jpg"
-              alt="Event cover"
-              width={50}
-              height={50}
-              className="relative z-20 aspect-video w-full object-cover brightness-60 grayscale dark:brightness-40"
-            />
-            <CardHeader>
-              <CardAction>
-                <Badge variant="secondary">Featured</Badge>
-              </CardAction>
-              <CardTitle>Design systems meetup</CardTitle>
-              <CardDescription>
-                A practical talk on component APIs, accessibility, and shipping
-                faster.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button className="w-full">View Event</Button>
-            </CardFooter>
-          </Card>
+        {categories.map((category) => (
+          <Link
+            key={category.name}
+            href={`/products/${category.name}`}
+            aria-label={`Browse ${category.name}`}
+            className="group relative aspect-square w-48 shrink-0 snap-start overflow-hidden rounded-lg bg-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 md:w-56"
+          >
+            {category.image ? (
+              <Image
+                src={category.image}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 192px, 224px"
+                className="object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-full w-full bg-[linear-gradient(145deg,#d7e3e5,#80969a)]"
+              />
+            )}
+            <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/10 to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+              <span className="translate-y-2 text-left text-lg font-semibold text-white transition-transform duration-200 group-hover:translate-y-0 group-focus-visible:translate-y-0">
+                {category.name}
+              </span>
+            </div>
+          </Link>
         ))}
       </div>
-
-      {/* FEATURED PRODUCTS */}
-     
-{/* 
-
- <div className="px-10 py-10 text-2xl mt-8 text-center">
-        <h1>FEATURED PRODUCTS</h1>
-        <div className="mt-8 flex justify-center flex-wrap gap-8 overflow-x-auto overflow-y-hidden no-scrollbar ">
+                                      {/* Featured Products */} 
+      <div className="mt-12 px-5 text-center md:mt-16 ">
+        <h2 className="text-2xl font-semibold md:text-3xl">Featured Products</h2>
+        <div className="mt-8 flex flex-wrap justify-center mb-8 gap-5">
           {featuredProducts.map((product) => (
-            <div
+            <Link
               key={product.name}
-              className="w-64 overflow-hidden rounded-xl border bg-white shadow-md "
+              href={`/products/${product.name}`}
+              className="group w-44 overflow-hidden rounded-lg border border-neutral-200 bg-white text-left transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
             >
-              <label className="flex h-40 cursor-pointer items-center justify-center bg-gray-100">
-                {productImages[`featured-${product.name}`] ? (
-                  <img
-                    src={productImages[`featured-${product.name}`]}
-                    alt={product.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm text-gray-500">
-                    Upload product image
-                  </span>
-                )}
-              </label>
-              <a
-                href={product.path}
-                className="block p-5 text-center text-xl font-semibold"
-              >
+              <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+                <Image
+                  src={product.image}
+                  alt=""
+                  fill
+                  sizes="176px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <span className="block px-4 py-3 text-base font-semibold">
                 {product.name}
-              </a>
-            </div>
+              </span>
+            </Link>
           ))}
         </div>
-      </div> */}
+        <Link
+        href={`/products/`}
+        className=" bg-black font-semibold  text-white rounded-xl px-3 py-1 hover:bg-white hover:text-black   ">View all products</Link>
 
-
-    </div>
+      </div>
+    </section>
   );
 };
 

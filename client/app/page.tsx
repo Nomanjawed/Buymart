@@ -8,8 +8,8 @@ const page = () => {
   return (
    <>
    <Hero />
-   <About />
    <Categories />
+   <About />
    <Why3Dprinted />
    </>  
 
