@@ -29,11 +29,15 @@ const getOrderById = async (req, res) => {
         res.status(500).json({ message: "Failed to find the order", error: error.message });
     }
 }
-const getmyOrders = async (req, res) => {
+const getMyOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ userId: req.user._id }).populate("products.product"); 
+        const orders = await Order.find({ userId: req.user.id })
+            .populate("products.product")
+            .sort({ createdAt: -1 });
         res.status(200).json({ message: "Orders fetched successfully", orders });
     } catch (error) {
         res.status(500).json({ message: "Failed to find the orders", error: error.message });
     }
-}   
+};
+
+module.exports = { getMyOrders };

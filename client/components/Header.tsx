@@ -32,7 +32,9 @@ const navItems =[
 
         <div className='flex gap-4 pr-4'>
 
-            <UserRound />
+            <Link href="/dashboard" aria-label="Your account" className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[#a53b2b]">
+              <UserRound aria-hidden="true" />
+            </Link>
             <ShoppingCartMinus />
         </div>
       </div>

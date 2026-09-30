@@ -25,8 +25,14 @@ export const registerUser = async (username, fullname, email, password) => {
 
 
 export const getMe = async () => {
-    const { data } = await api.get('/auth/me');
-    return data.data;
+    const { data: response } = await api.get('/auth/me');
+    return response?.user ?? response?.data?.user ?? response?.data ?? response;
+};
+
+export const getMyOrders = async () => {
+    const { data: response } = await api.get('/order/my');
+    const orders = response?.orders ?? response?.data?.orders ?? [];
+    return Array.isArray(orders) ? orders : [];
 };
 
 
