@@ -48,6 +48,21 @@ export const getAllProducts = async (page = 1) => {
     return data?.data ?? data;
 };
 
+export const createProduct = async (product) => {
+    const { data } = await api.post('/product/create', product);
+    return data?.createProduct ?? data?.product ?? data;
+};
+
+export const updateProduct = async (productId, product) => {
+    const { data } = await api.patch(`/product/${productId}`, product);
+    return data?.updatedProduct ?? data?.product ?? data;
+};
+
+export const deleteProduct = async (productId) => {
+    const { data } = await api.delete(`/product/${productId}`);
+    return data?.deleteProduct ?? data?.product ?? data;
+};
+
 
 // Blogs
 export const getBlogs = async () => {

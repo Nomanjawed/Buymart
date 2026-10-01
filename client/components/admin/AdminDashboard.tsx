@@ -14,9 +14,18 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import axios from 'axios'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { logout } from '@/utils/api'
+import {
+  createProduct as createProductRequest,
+  deleteProduct as deleteProductRequest,
+  getAllProducts,
+  getMe,
+  logout,
+  updateProduct as updateProductRequest,
+} from '@/utils/api'
+import { log } from 'console'
 
 type Product = {
   id: string
@@ -29,6 +38,8 @@ type Product = {
 
 type ProductDraft = Omit<Product, 'id'>
 type DashboardView = 'products' | 'orders'
+type ApiProduct = Omit<Product, 'id'> & { _id?: string; id?: string }
+type ProductPagination = { page: number; totalPages: number; totalProducts: number }
 
 const emptyDraft: ProductDraft = {
   name: '',
@@ -43,18 +54,30 @@ const currency = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 })
 
+function getRequestError(error: unknown, fallback: string) {
+  if (axios.isAxiosError<{ message?: unknown }>(error)) {
+    const message = error.response?.data?.message
+    if (typeof message === 'string') return message
+  }
+
+  return error instanceof Error ? error.message : fallback
+}
+
 function ProductEditor({
   product,
   onSave,
   onCancel,
+  isSaving,
 }: {
   product: Product | null
-  onSave: (draft: ProductDraft) => void
+  onSave: (draft: ProductDraft) => Promise<void>
   onCancel: () => void
+  isSaving: boolean
 }) {
   const [draft, setDraft] = useState<ProductDraft>(product ?? emptyDraft)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   async function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -73,6 +96,7 @@ function ProductEditor({
 
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
 
     if (!cloudName || !uploadPreset) {
       setUploadError('Set the Cloudinary cloud name and unsigned upload preset to enable uploads.')
@@ -109,9 +133,15 @@ function ProductEditor({
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSave({ ...draft, price: Number(draft.price) })
+    setSaveError('')
+
+    try {
+      await onSave({ ...draft, price: Number(draft.price) })
+    } catch (error) {
+      setSaveError(getRequestError(error, 'The product could not be saved.'))
+    }
   }
 
   return (
@@ -213,6 +243,7 @@ function ProductEditor({
               )}
             </div>
             {uploadError && <p role="alert" className="mt-2 text-sm text-red-700">{uploadError}</p>}
+            {saveError && <p role="alert" className="mt-2 text-sm text-red-700">{saveError}</p>}
             {draft.image && (
               <div className="relative mt-3 aspect-16/7 max-w-sm overflow-hidden bg-neutral-100">
                 <Image src={draft.image} alt="Product image preview" fill unoptimized className="object-cover" />
@@ -224,16 +255,17 @@ function ProductEditor({
             <button
               type="button"
               onClick={onCancel}
+              disabled={isSaving}
               className="h-10 border border-neutral-300 px-4 text-sm font-medium hover:bg-neutral-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isUploading || !draft.image}
+              disabled={isUploading || isSaving || !draft.image}
               className="h-10 bg-[#243b33] px-4 text-sm font-semibold text-white transition hover:bg-[#182a24] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {product ? 'Save changes' : 'Add product'}
+              {isSaving ? 'Saving…' : product ? 'Save changes' : 'Add product'}
             </button>
           </div>
         </form>
@@ -244,12 +276,102 @@ function ProductEditor({
 
 export default function AdminDashboard() {
   const router = useRouter()
+  const [hasAdminAccess, setHasAdminAccess] = useState(false)
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true)
+  const [accessError, setAccessError] = useState('')
   const [activeView, setActiveView] = useState<DashboardView>('products')
   const [products, setProducts] = useState<Product[]>([])
+  const [page, setPage] = useState(1)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [pagination, setPagination] = useState<ProductPagination>({
+    page: 1,
+    totalPages: 1,
+    totalProducts: 0,
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const [mutationError, setMutationError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    let isCurrentRequest = true
+
+    getMe()
+      .then((profile: { role?: string }) => {
+        if (!isCurrentRequest) return
+
+        if (profile.role !== 'admin') {
+          router.replace('/dashboard')
+          return
+        }
+
+        setHasAdminAccess(true)
+      })
+      .catch((error: unknown) => {
+        if (!isCurrentRequest) return
+
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          router.replace('/auth')
+        } else {
+          setAccessError('Admin access could not be verified. Please try again.')
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) setIsCheckingAccess(false)
+      })
+
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [router])
+
+  useEffect(() => {
+    if (!hasAdminAccess) return
+
+    let isCurrentRequest = true
+
+    getAllProducts(page)
+      .then((response) => {
+        if (!isCurrentRequest) return
+
+        const apiProducts: ApiProduct[] = Array.isArray(response?.products)
+          ? response.products
+          : []
+        const loadedProducts = apiProducts.map((product, index) => ({
+          id: product._id ?? product.id ?? `${product.name}-${index}`,
+          name: product.name,
+          description: product.description,
+          category: product.category,
+          price: Number(product.price),
+          image: product.image,
+        }))
+
+        setProducts(loadedProducts)
+        setPagination(response?.pagination ?? {
+          page,
+          totalPages: 1,
+          totalProducts: loadedProducts.length,
+        })
+        setLoadError('')
+      })
+      .catch((error: unknown) => {
+        if (isCurrentRequest) {
+          setLoadError(getRequestError(error, 'Products could not be loaded.'))
+        }
+      })
+      .finally(() => {
+        if (isCurrentRequest) setIsLoading(false)
+      })
+
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [hasAdminAccess, page, reloadKey])
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -260,29 +382,49 @@ export default function AdminDashboard() {
     )
   }, [products, searchQuery])
 
-  function saveProduct(draft: ProductDraft) {
-    if (editingProduct) {
-      setProducts((currentProducts) => currentProducts.map((product) =>
-        product.id === editingProduct.id ? { ...draft, id: editingProduct.id } : product,
-      ))
-      setNotice('Product changes saved in this session.')
-    } else {
-      setProducts((currentProducts) => [
-        { ...draft, id: globalThis.crypto.randomUUID() },
-        ...currentProducts,
-      ])
-      setNotice('Product added to this session.')
-    }
+  async function saveProduct(draft: ProductDraft) {
+    setIsSaving(true)
+    setMutationError('')
 
-    setEditingProduct(null)
-    setIsEditorOpen(false)
+    try {
+      if (editingProduct) {
+        await updateProductRequest(editingProduct.id, draft)
+        setNotice('Product updated.')
+      } else {
+        await createProductRequest(draft)
+        setNotice('Product created.')
+      }
+
+      setIsEditorOpen(false)
+      setEditingProduct(null)
+      setIsLoading(true)
+      setReloadKey((currentKey) => currentKey + 1)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  function deleteProduct(product: Product) {
+  async function deleteProduct(product: Product) {
     if (!window.confirm(`Delete ${product.name}?`)) return
 
-    setProducts((currentProducts) => currentProducts.filter((item) => item.id !== product.id))
-    setNotice('Product removed from this session.')
+    setDeletingId(product.id)
+    setMutationError('')
+
+    try {
+      await deleteProductRequest(product.id)
+      setNotice('Product deleted.')
+      setIsLoading(true)
+
+      if (products.length === 1 && page > 1) {
+        setPage((currentPage) => currentPage - 1)
+      } else {
+        setReloadKey((currentKey) => currentKey + 1)
+      }
+    } catch (error) {
+      setMutationError(getRequestError(error, 'The product could not be deleted.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   function openNewProduct() {
@@ -298,6 +440,27 @@ export default function AdminDashboard() {
   function handleSignOut() {
     logout()
     router.replace('/auth')
+  }
+
+  if (isCheckingAccess || !hasAdminAccess) {
+    return (
+      <main className="flex min-h-[60vh] flex-1 items-center justify-center bg-[#f3f4f0] px-5 text-center">
+        <div>
+          <p role={accessError ? 'alert' : 'status'} className={accessError ? 'text-sm text-red-700' : 'text-sm text-neutral-600'}>
+            {accessError || 'Verifying admin access…'}
+          </p>
+          {accessError && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 text-sm font-semibold text-[#a53b2b] hover:underline"
+            >
+              Try again
+            </button>
+          )}
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -348,7 +511,12 @@ export default function AdminDashboard() {
           <div className="min-w-0">
             {notice && (
               <p role="status" className="mb-5 border-l-2 border-emerald-700 bg-white px-4 py-3 text-sm text-emerald-900">
-                {notice} Product data is not connected to the API yet.
+                {notice}
+              </p>
+            )}
+            {mutationError && (
+              <p role="alert" className="mb-5 border-l-2 border-red-700 bg-white px-4 py-3 text-sm text-red-800">
+                {mutationError}
               </p>
             )}
 
@@ -370,8 +538,8 @@ export default function AdminDashboard() {
 
                 <div className="mb-5 grid gap-3 sm:grid-cols-3">
                   <div className="border border-[#d9ddd6] bg-white px-4 py-3">
-                    <p className="text-xs text-neutral-500">Products in this session</p>
-                    <p className="mt-1 text-2xl font-semibold">{products.length}</p>
+                    <p className="text-xs text-neutral-500">Products in catalogue</p>
+                    <p className="mt-1 text-2xl font-semibold">{pagination.totalProducts}</p>
                   </div>
                   <div className="border border-[#d9ddd6] bg-white px-4 py-3 sm:col-span-2">
                     <label className="flex h-full min-h-12 items-center gap-3">
@@ -393,7 +561,23 @@ export default function AdminDashboard() {
                     <span>Product</span><span>Category</span><span>Price</span><span className="text-right">Actions</span>
                   </div>
 
-                  {filteredProducts.length ? (
+                  {isLoading ? (
+                    <p role="status" className="px-5 py-14 text-center text-sm text-neutral-500">Loading products…</p>
+                  ) : loadError ? (
+                    <div className="px-5 py-14 text-center">
+                      <p role="alert" className="text-sm text-red-700">{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLoading(true)
+                          setReloadKey((currentKey) => currentKey + 1)
+                        }}
+                        className="mt-3 text-sm font-semibold text-[#a53b2b] hover:underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : filteredProducts.length ? (
                     <ul className="divide-y divide-neutral-200">
                       {filteredProducts.map((product) => (
                         <li key={product.id} className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(220px,2fr)_minmax(110px,1fr)_minmax(90px,0.7fr)_100px] md:items-center md:gap-4 md:px-5">
@@ -422,8 +606,9 @@ export default function AdminDashboard() {
                               type="button"
                               aria-label={`Delete ${product.name}`}
                               title="Delete product"
+                              disabled={deletingId === product.id}
                               onClick={() => deleteProduct(product)}
-                              className="inline-flex size-9 items-center justify-center text-[#a53b2b] hover:bg-red-50"
+                              className="inline-flex size-9 items-center justify-center text-[#a53b2b] hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -450,6 +635,35 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
+                {pagination.totalPages > 1 && (
+                  <nav aria-label="Product pages" className="mt-5 flex items-center justify-center gap-4">
+                    <button
+                      type="button"
+                      disabled={page <= 1 || isLoading}
+                      onClick={() => {
+                        setLoadError('')
+                        setIsLoading(true)
+                        setPage((currentPage) => currentPage - 1)
+                      }}
+                      className="h-9 border border-neutral-300 px-3 text-sm disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-neutral-600">Page {pagination.page} of {pagination.totalPages}</span>
+                    <button
+                      type="button"
+                      disabled={page >= pagination.totalPages || isLoading}
+                      onClick={() => {
+                        setLoadError('')
+                        setIsLoading(true)
+                        setPage((currentPage) => currentPage + 1)
+                      }}
+                      className="h-9 border border-neutral-300 px-3 text-sm disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                )}
               </section>
             ) : (
               <section aria-labelledby="orders-title">
@@ -501,6 +715,7 @@ export default function AdminDashboard() {
           key={editingProduct?.id ?? 'new-product'}
           product={editingProduct}
           onSave={saveProduct}
+          isSaving={isSaving}
           onCancel={() => {
             setEditingProduct(null)
             setIsEditorOpen(false)

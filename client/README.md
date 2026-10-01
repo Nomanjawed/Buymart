@@ -22,17 +22,16 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Admin Dashboard Setup
 
-The Proxy verifies the login JWT before routing by role. Configure `JWT_SECRET` in the client environment with the same value used by the API. Keep it server-only; do not prefix it with `NEXT_PUBLIC_`. Restart Next.js after changing environment variables.
+The Proxy checks for a login token. Dashboard role routing and the admin UI use the authenticated `/auth/me` response; product write endpoints also enforce admin authorization on the API.
 
 Product image uploads use Cloudinary unsigned uploads. Configure these public variables in the client environment:
 
 ```env
-JWT_SECRET=the-same-server-secret-used-by-the-api
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-unsigned-upload-preset
 ```
 
-Create an unsigned upload preset in Cloudinary before enabling uploads. Product changes currently live only in the dashboard session, and the admin orders view is waiting for its API integration.
+Create an unsigned upload preset in Cloudinary before enabling uploads. The admin product catalogue reads from the product API and persists create, update, and delete actions through its protected routes. The admin orders view is waiting for an orders API integration.
 
 ## Learn More
 

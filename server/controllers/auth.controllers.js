@@ -87,7 +87,7 @@ const loginUser = async (req, res) => {
 
   const userResponse = user.toObject();
   delete userResponse.password;
-  delete userResponse.role;
+  
 
   res.status(200).json({ 
     message: "You have successfully logged in",
@@ -98,7 +98,7 @@ const loginUser = async (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password -role");
+    const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

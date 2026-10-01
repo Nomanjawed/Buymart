@@ -12,6 +12,7 @@ type UserProfile = {
   username?: string
   email?: string
   createdAt?: string
+  role?: string
 }
 
 type OrderItem = {
@@ -67,7 +68,13 @@ export default function DashboardPage() {
         return
       }
 
-      setUser(profileResult.value as UserProfile)
+      const profile = profileResult.value as UserProfile
+      if (profile.role === 'admin') {
+        router.replace('/admin/dashboard')
+        return
+      }
+
+      setUser(profile)
 
       if (ordersResult.status === 'fulfilled') {
         setOrders(ordersResult.value as CustomerOrder[])

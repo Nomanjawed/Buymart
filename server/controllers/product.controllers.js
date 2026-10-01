@@ -79,9 +79,10 @@ const getSingleProductById = async (req, res) => {
 
 // updateProduct (patch)
 const updateProduct = async (req, res) => {
-const { name, description, price, category, isFeatured} = req.body || {};
+const { name, description, price, category, image, isFeatured} = req.body || {};
 const id = req.params.id; 
-  const updatedProduct= await Product.findByIdAndUpdate(id, {name, description, price, category, isFeatured});
+  const updatedProduct= await Product.findByIdAndUpdate(id, {name, description, price, category, image, isFeatured}, { new: true, runValidators: true });
+  if (!updatedProduct) return res.status(404).json({ message: "Product not found" });
   res.status(200).json({ message: "Product updated successfully", updatedProduct }); 
 };
 
