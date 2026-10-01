@@ -3,7 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/components/cart/CartProvider'
+import { hasAuthToken } from '@/utils/api'
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -11,7 +13,12 @@ const currency = new Intl.NumberFormat('en-US', {
 })
 
 export default function CartPage() {
+  const router = useRouter()
   const { items, itemCount, subtotal, setQuantity, removeItem } = useCart()
+
+  function handleCheckout() {
+    router.push(hasAuthToken() ? '/checkout' : '/auth?returnTo=%2Fcheckout')
+  }
 
   return (
     <main className="flex-1 bg-[#faf9f6] text-[#202a26]">
@@ -43,7 +50,7 @@ export default function CartPage() {
               {items.map((item) => (
                 <article key={item.id} className="flex gap-4 py-5 sm:gap-6">
                   <div className="relative aspect-square size-24 shrink-0 overflow-hidden bg-[#e9e7e0] sm:size-32">
-                    <Image src={item.image} alt={item.name} fill sizes="128px" className="object-cover" />
+                    <Image src={item.image} alt={item.name} fill unoptimized sizes="128px" className="object-cover" />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div className="min-w-0">
@@ -100,10 +107,10 @@ export default function CartPage() {
               <p className="mt-3 text-xs leading-5 text-[#78847b]">Shipping and taxes are calculated at checkout.</p>
               <button
                 type="button"
-                disabled
-                className="mt-6 h-11 w-full cursor-not-allowed rounded-sm bg-[#243b33] px-4 text-sm font-semibold text-white opacity-55"
+                onClick={handleCheckout}
+                className="mt-6 h-11 w-full rounded-sm bg-[#243b33] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33]"
               >
-                Checkout coming soon
+                Checkout
               </button>
               <Link href="/categories" className="mt-4 block text-center text-sm font-medium text-[#52645a] hover:text-[#a53b2b]">
                 Continue shopping

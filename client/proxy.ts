@@ -5,6 +5,12 @@ export function proxy(request: NextRequest) {
   const hasToken = Boolean(token)
   const pathname = request.nextUrl.pathname
 
+  if (pathname.startsWith('/checkout') && !hasToken) {
+    const authUrl = new URL('/auth', request.url)
+    authUrl.searchParams.set('returnTo', '/checkout')
+    return NextResponse.redirect(authUrl)
+  }
+
   if (pathname.startsWith('/dashboard') && !hasToken) {
     return NextResponse.redirect(new URL('/auth', request.url))
   }
@@ -21,5 +27,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/checkout/:path*', '/auth'],
 }

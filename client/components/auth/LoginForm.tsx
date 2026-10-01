@@ -28,7 +28,8 @@ export default function LoginForm() {
 
     try {
       await login(email.trim(), password)
-      router.replace('/dashboard')
+      const returnTo = new URLSearchParams(window.location.search).get('returnTo')
+      router.replace(returnTo === '/checkout' ? returnTo : '/dashboard')
     } catch (error) {
       const responseBody = axios.isAxiosError<{ message?: unknown; error?: unknown }>(error)
         ? error.response?.data
