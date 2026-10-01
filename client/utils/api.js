@@ -53,6 +53,12 @@ export const getAllProducts = async (page = 1) => {
     return data?.data ?? data;
 };
 
+export const getFeaturedProducts = async () => {
+    const { data } = await api.get('/product/featured');
+    const response = data?.data ?? data;
+    return Array.isArray(response?.products) ? response.products : [];
+};
+
 export const createProduct = async (product) => {
     const { data } = await api.post('/product/create', product);
     return data?.createProduct ?? data?.product ?? data;

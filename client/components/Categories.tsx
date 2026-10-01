@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import FeaturedProducts from "@/components/categories/FeaturedProducts";
 
 const Categories = () => {
   const categories = [
@@ -11,13 +12,6 @@ const Categories = () => {
     { name: "Ships",  image: null },
     { name: "Architecture",  image: "/architecture.jpg" },
     { name: "Character",  image: "/character.jpg" },
-  ];
-
-  const featuredProducts = [
-    { name: "Cars",  image: "/car.jpg" },
-    { name: "Aircraft",  image: "/airplane.jpg" },
-    { name: "Architecture",  image: "/architecture.jpg" },
-    { name: "Character", image: "/character.jpg" },
   ];
 
   return (
@@ -64,30 +58,9 @@ const Categories = () => {
                                       {/* Featured Products */} 
       <div className="mt-12 px-5 text-center md:mt-16 ">
         <h2 className="text-2xl font-semibold md:text-3xl">Featured Products</h2>
-        <div className="mt-8 flex flex-wrap justify-center mb-8 gap-5">
-          {featuredProducts.map((product) => (
-            <Link
-              key={product.name}
-              href={`/products/${product.name}`}
-              className="group w-44 overflow-hidden rounded-lg border border-neutral-200 bg-white text-left transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
-                <Image
-                  src={product.image}
-                  alt=""
-                  fill
-                  sizes="176px"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <span className="block px-4 py-3 text-base font-semibold">
-                {product.name}
-              </span>
-            </Link>
-          ))}
-        </div>
+        <FeaturedProducts />
         <Link
-        href={`/products/`}
+        href={`/categories/`}
         className=" bg-black font-semibold  text-white rounded-xl px-3 py-1 hover:bg-white hover:text-black   ">View all products</Link>
 
       </div>

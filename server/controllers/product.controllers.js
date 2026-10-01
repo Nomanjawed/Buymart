@@ -60,11 +60,9 @@ const getAllProduct = async (req, res) => {
 };
 
 const getFeaturedProducts = async (req, res) => {
-  const products = await Product.find({ isFeatured: true })
-    .sort({ updatedAt: -1 })
-    .limit(5);
+  const products = await Product.find().sort({ createdAt: -1 }).limit(5);
 
-  res.status(200).json({ message: "Featured products", products });
+  res.status(200).json({ message: "Recent products", products });
 };
 
 // getAllProduct
