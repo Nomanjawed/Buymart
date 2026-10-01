@@ -9,7 +9,7 @@ const Product = require("../models/product.model");
 
 // createProduct   (post)
 const createProduct = async (req, res) => {
-  const { name, description, price, category, image } = req.body || {};
+  const { name, description, price, category, image, isFeatured } = req.body || {};
 
   if (!name)
     return res.status(400).json({ message: "Product Name is required" });
@@ -30,6 +30,7 @@ const createProduct = async (req, res) => {
     price,
     category,
     image,
+    isFeatured,
   });
 
   res.status(201).json({ message: "Product has been created", createProduct });
@@ -37,8 +38,33 @@ const createProduct = async (req, res) => {
 
 // getAllProduct (get)
 const getAllProduct = async (req, res) => {
-  const products = await Product.find();
-  res.status(200).json({ message: "All products", products });
+  const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+  const limit = 6;
+  const skip = (page - 1) * limit;
+
+  const [products, totalProducts] = await Promise.all([
+    Product.find().skip(skip).limit(limit),
+    Product.countDocuments(),
+  ]);
+
+  res.status(200).json({
+    message: "All products",
+    products,
+    pagination: {
+      page,
+      limit,
+      totalProducts,
+      totalPages: Math.ceil(totalProducts / limit),
+    },
+  });
+};
+
+const getFeaturedProducts = async (req, res) => {
+  const products = await Product.find({ isFeatured: true })
+    .sort({ updatedAt: -1 })
+    .limit(5);
+
+  res.status(200).json({ message: "Featured products", products });
 };
 
 // getAllProduct
@@ -53,9 +79,9 @@ const getSingleProductById = async (req, res) => {
 
 // updateProduct (patch)
 const updateProduct = async (req, res) => {
-const { name, description, price, category} = req.body || {};
+const { name, description, price, category, isFeatured} = req.body || {};
 const id = req.params.id; 
-  const updatedProduct= await Product.findByIdAndUpdate(id, {name, description, price, category});
+  const updatedProduct= await Product.findByIdAndUpdate(id, {name, description, price, category, isFeatured});
   res.status(200).json({ message: "Product updated successfully", updatedProduct }); 
 };
 
@@ -72,6 +98,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getAllProduct,
+  getFeaturedProducts,
   getSingleProductById,
   updateProduct,
   deleteProduct,

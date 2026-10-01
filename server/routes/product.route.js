@@ -2,6 +2,7 @@
 const express = require('express');
 const {createProduct,
        getAllProduct,
+       getFeaturedProducts,
        getSingleProductById,
        updateProduct,
        deleteProduct} = require('../controllers/product.controllers');
@@ -16,6 +17,7 @@ const router = express.Router()
 // routes
 router.post('/create',authenticateUser,adminAuthorization,createProduct)
 router.get('/all',getAllProduct)
+router.get('/featured',getFeaturedProducts)
 router.get('/:id',getSingleProductById)
 router.patch('/:id',authenticateUser,adminAuthorization,updateProduct)
 router.delete('/:id',authenticateUser,adminAuthorization,deleteProduct)

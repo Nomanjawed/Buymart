@@ -20,6 +20,20 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Admin Dashboard Setup
+
+The Proxy verifies the login JWT before routing by role. Configure `JWT_SECRET` in the client environment with the same value used by the API. Keep it server-only; do not prefix it with `NEXT_PUBLIC_`. Restart Next.js after changing environment variables.
+
+Product image uploads use Cloudinary unsigned uploads. Configure these public variables in the client environment:
+
+```env
+JWT_SECRET=the-same-server-secret-used-by-the-api
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-unsigned-upload-preset
+```
+
+Create an unsigned upload preset in Cloudinary before enabling uploads. Product changes currently live only in the dashboard session, and the admin orders view is waiting for its API integration.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,10 +1,10 @@
 'use client'
 
 import axios from 'axios'
-import { CalendarDays, Mail, Package, UserRound } from 'lucide-react'
+import { CalendarDays, LogOut, Mail, Package, UserRound } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getMe, getMyOrders } from '@/utils/api'
+import { getMe, getMyOrders, logout } from '@/utils/api'
 
 type UserProfile = {
   _id?: string
@@ -106,12 +106,25 @@ export default function DashboardPage() {
             </h1>
             <p className="mt-2 text-sm text-white/70">Your details and order history.</p>
           </div>
-          <div className="flex items-center gap-3 border-t border-white/20 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-            <Package aria-hidden="true" size={20} className="text-[#d8b98e]" />
-            <div>
-              <p className="text-2xl font-semibold">{isLoading ? '—' : orders.length}</p>
-              <p className="text-xs text-white/70">{orders.length === 1 ? 'Order' : 'Orders'}</p>
+            <div className="flex flex-wrap items-center gap-4 border-t border-white/20 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+              <div className="flex items-center gap-3">
+                <Package aria-hidden="true" size={20} className="text-[#d8b98e]" />
+                <div>
+                  <p className="text-2xl font-semibold">{isLoading ? '—' : orders.length}</p>
+                  <p className="text-xs text-white/70">{orders.length === 1 ? 'Order' : 'Orders'}</p>
+                </div>
             </div>
+              <button
+                type="button"
+                onClick={() => {
+                  logout()
+                  router.replace('/auth')
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-sm border border-white/35 px-3 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <LogOut aria-hidden="true" size={16} />
+                Sign out
+              </button>
           </div>
         </div>
       </section>

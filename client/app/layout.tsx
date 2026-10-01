@@ -3,6 +3,7 @@ import { Poppins, } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { CartProvider } from "@/components/cart/CartProvider";
 
 const poppins = Poppins({
   weight: "400",
@@ -27,11 +28,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        
-        <Header/>
-        {children}
-        <Footer/>
-        </body>
+        <CartProvider>
+          <Header />
+          {children}
+          <Footer />
+        </CartProvider>
+      </body>
     </html>
   );
 }

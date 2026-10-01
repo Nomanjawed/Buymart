@@ -10,10 +10,18 @@ export const login = async (email, password) => {
 
     if (typeof token === 'string' && token.length > 0) {
         Cookies.set('token', token, { expires: 7, path: '/' });
+        window.dispatchEvent(new Event('buymart:auth-changed'));
     }
 
     return result?.user ?? result;
 };
+
+export const logout = () => {
+    Cookies.remove('token', { path: '/' });
+    window.dispatchEvent(new Event('buymart:auth-changed'));
+};
+
+export const hasAuthToken = () => Boolean(Cookies.get('token'));
 
 export const registerUser = async (username, fullname, email, password) => {
    const { data } = await api.post('/auth/register', { email, password, username, fullname });
@@ -33,6 +41,11 @@ export const getMyOrders = async () => {
     const { data: response } = await api.get('/order/my');
     const orders = response?.orders ?? response?.data?.orders ?? [];
     return Array.isArray(orders) ? orders : [];
+};
+
+export const getAllProducts = async (page = 1) => {
+    const { data } = await api.get('/product/all', { params: { page } });
+    return data?.data ?? data;
 };
 
 

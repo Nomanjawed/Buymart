@@ -34,6 +34,11 @@ const productSchema = new mongoose.Schema(
         required: true,
     },
 
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+
 
 
     // product orderlist
