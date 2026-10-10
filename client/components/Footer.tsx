@@ -3,7 +3,7 @@ const Footer = () => {
     <footer className="mt-auto bg-slate-100 text-neutral-800">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-9 px-5 py-10 sm:px-8 md:grid-cols-4 md:gap-8 lg:px-10">
         <div className="col-span-2 md:col-span-1">
-          <p className="font-mono text-xl font-bold tracking-widest">BuyMart</p>
+          <p className="font-mono text-xl font-bold tracking-widest">HOBBLY</p>
         </div>
 
         <nav aria-label="Footer navigation" className="flex flex-col items-start gap-3 text-sm">

@@ -65,7 +65,7 @@ export default function ContactPage() {
 
             <div className="relative z-20 flex min-h-[460px] flex-col justify-between p-5 sm:min-h-[500px] sm:p-8 lg:p-10">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Buymart studio</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Hobbly studio</p>
                 <h2 id="contact-details-title" className="mt-3 max-w-sm text-2xl font-semibold leading-tight sm:text-3xl">
                   Good ideas start with a conversation.
                 </h2>
@@ -91,7 +91,7 @@ export default function ContactPage() {
                       </dd>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <MapPin size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[#e6b9a7]" />
                     <div>
                       <dt className="text-xs text-white/65">Social</dt>
@@ -116,7 +116,7 @@ export default function ContactPage() {
                         )}
                       </dd>
                     </div>
-                  </div>
+                  </div> */}
                 </dl>
               </address>
             </div>

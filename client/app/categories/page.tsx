@@ -103,14 +103,15 @@ export default function CategoriesPage() {
         />
         <div className="absolute inset-0 bg-linear-to-r from-[#14231f]/85 via-[#14231f]/50 to-transparent" />
         <div className="relative flex h-full max-w-7xl flex-col justify-center px-6 text-white sm:px-10 lg:px-16">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#d6b78b]">
-            The Buymart collection
+          <p className="mb-4 text-md font-light font-bebas-neue uppercase tracking-[0.2em] text-red-800">
+            The HOBBLY collection
           </p>
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+           
+          <h1 className="max-w-xl text-4xl font-semibold font-poppins leading-tight sm:text-5xl lg:text-6xl">
             Little details. Lasting delight.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-6 text-white/80 sm:text-base">
-            Discover characterful 3D-printed pieces for your desk, shelf, and next adventure.
+            Discover characterful 3D-printed pieces for your desk and shelf
           </p>
           <Link
             href="#products"
@@ -127,7 +128,7 @@ export default function CategoriesPage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#78847b]">
               Made to be discovered
             </p>
-            <h2 className="text-2xl font-semibold sm:text-3xl">Shop all products</h2>
+            <h2 className="text-2xl font-poppins font-semibold sm:text-3xl">Shop Products</h2>
           </div>
           <span className="pb-1 text-sm text-[#78847b]">
             {pagination.totalProducts} {pagination.totalProducts === 1 ? 'piece' : 'pieces'}

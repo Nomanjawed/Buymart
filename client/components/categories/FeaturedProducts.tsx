@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import AddToCartButton from '@/components/cart/AddToCartButton'
 import { getFeaturedProducts } from '@/utils/api'
 
 type FeaturedProduct = {
@@ -11,6 +12,7 @@ type FeaturedProduct = {
   name: string
   category: string
   image: string
+  price: number
 }
 
 function toCategorySlug(category: string) {
@@ -54,13 +56,11 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <div className="my-4 flex  justify-center items-center snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-3 pb-3 scrollbar-none md:gap-6 md:px-8">
+    <div className="my-4 -mx-5 flex snap-x md:justify-center snap-mandatory gap-4 overflow-x-auto px-4 pt-3 pb-3 scrollbar-none md:gap-6 md:px-8">
       {products.map((product, index) => (
-        <Link
+        <article
           key={product._id ?? product.id ?? `${product.name}-${index}`}
-          href={`/products/${toCategorySlug(product.category)}`}
-          aria-label={`Browse ${product.name}, ${product.category}`}
-          className="group relative aspect-square w-48 shrink-0 snap-start overflow-hidden rounded-lg bg-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 md:w-56"
+          className="group relative aspect-square w-48 shrink-0 overflow-hidden rounded-lg bg-neutral-200 md:w-56"
         >
           <Image
             src={product.image || '/Hero.png'}
@@ -70,12 +70,26 @@ export default function FeaturedProducts() {
             sizes="(max-width: 768px) 192px, 224px"
             className="object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
           />
-          <div className="absolute inset-0 flex items-end bg-linear-to-t from-black/75 via-black/10 to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-            <span className="translate-y-2 text-left text-lg font-semibold text-white transition-transform duration-200 group-hover:translate-y-0 group-focus-visible:translate-y-0">
+          <Link
+            href={`/products/${toCategorySlug(product.category)}`}
+            aria-label={`Browse ${product.name}, ${product.category}`}
+            className="absolute inset-0 z-10 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-2 bg-linear-to-t from-black/85 via-black/65 to-black/20 px-3 py-3 opacity-100 transition-opacity duration-200 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 sm:px-4">
+            <span className="min-w-0 truncate text-left text-sm font-semibold text-white sm:text-base">
               {product.name}
             </span>
+            <AddToCartButton
+              product={{
+                id: product._id ?? product.id ?? `${product.name}-${index}`,
+                name: product.name,
+                category: product.category,
+                image: product.image || '/Hero.png',
+                price: Number(product.price) || 0,
+              }}
+            />
           </div>
-        </Link>
+        </article>
       ))}
     </div>
   )

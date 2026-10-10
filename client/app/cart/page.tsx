@@ -108,7 +108,7 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={handleCheckout}
-                className="mt-6 h-11 w-full rounded-sm bg-[#243b33] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33]"
+                className="mt-6 h-11 w-full rounded-sm bg-black px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33]"
               >
                 Checkout
               </button>

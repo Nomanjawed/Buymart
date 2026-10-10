@@ -138,7 +138,7 @@ export default function CheckoutPage() {
           <h1 className="mt-2 text-3xl font-semibold">Thank you for your order</h1>
           {order._id && <p className="mt-3 text-sm text-neutral-600">Order #{order._id.slice(-8).toUpperCase()}</p>}
           <p className="mt-2 text-sm text-neutral-600">Your order has been received and is being prepared.</p>
-          <Link href="/dashboard" className="mt-7 inline-flex h-11 items-center justify-center bg-[#243b33] px-5 text-sm font-semibold text-white hover:bg-[#365346]">
+          <Link href="/dashboard" className="mt-7 inline-flex h-11 items-center justify-center bg-black px-5 text-sm font-semibold text-white hover:bg-[#365346]">
             View your account
           </Link>
         </section>
@@ -220,7 +220,7 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handlePlaceOrder}
                 disabled={isPlacingOrder || itemsWithInvalidIds.length > 0}
-                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 bg-[#243b33] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33] disabled:cursor-wait disabled:opacity-60"
+                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 bg-black px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33] disabled:cursor-wait disabled:opacity-60"
               >
                 {isPlacingOrder ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <LockKeyhole size={16} aria-hidden="true" />}
                 {isPlacingOrder ? 'Placing order…' : 'Place order'}

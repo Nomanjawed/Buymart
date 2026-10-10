@@ -58,7 +58,7 @@ const Header = () => {
   return (
     <header className="relative z-40 bg-white px-4 py-3">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <Link href="/" className="shrink-0 font-mono text-lg font-bold tracking-widest sm:text-xl">BUYMART</Link>
+        <Link href="/" className="shrink-0 font-mono text-lg font-bold tracking-widest sm:text-xl">HOBBLY</Link>
         <nav aria-label="Main navigation" className="hidden flex-1 md:block">
           <ul className="flex items-center justify-center gap-5 lg:gap-8">
             {navItems.map((item) => (

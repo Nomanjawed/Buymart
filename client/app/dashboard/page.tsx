@@ -106,7 +106,7 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 px-5 py-10 sm:px-8 sm:py-14 md:flex-row md:items-end">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#d8b98e]">
-              Buymart / Your account
+              HOBBLY / Your account
             </p>
             <h1 className="text-3xl font-semibold sm:text-4xl">
               {user?.fullname ? `Hello, ${user.fullname}` : 'Your dashboard'}
