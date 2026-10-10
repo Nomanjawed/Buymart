@@ -39,8 +39,6 @@ const productSchema = new mongoose.Schema(
       default: false,
     },
 
-
-
     // product orderlist
     orderList: [
         {

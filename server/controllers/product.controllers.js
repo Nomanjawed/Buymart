@@ -39,7 +39,7 @@ const createProduct = async (req, res) => {
 // getAllProduct (get)
 const getAllProduct = async (req, res) => {
   const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
-  const limit = 6;
+  const limit = 8;
   const skip = (page - 1) * limit;
 
   const [products, totalProducts] = await Promise.all([
@@ -58,6 +58,7 @@ const getAllProduct = async (req, res) => {
     },
   });
 };
+// getAllProduct
 
 const getFeaturedProducts = async (req, res) => {
   const products = await Product.find().sort({ createdAt: -1 }).limit(5);
@@ -65,7 +66,7 @@ const getFeaturedProducts = async (req, res) => {
   res.status(200).json({ message: "Recent products", products });
 };
 
-// getAllProduct
+
 
 // getSingleProductById (get)
 const getSingleProductById = async (req, res) => {
