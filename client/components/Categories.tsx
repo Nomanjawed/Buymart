@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-// import FeaturedProducts from "@/components/categories/FeaturedProducts"; 
+import FeaturedProducts from "./categories/FeaturedProducts";
 
 const Categories = () => {
   const categories = [
@@ -60,7 +60,7 @@ const Categories = () => {
                                       {/* Featured Products */}
       <div className="mt-4 px-5 text-center md:mt-10 ">
         <h2 className="text-3xl font-light md:text-5xl font-bebas-neue">Featured Products</h2>
-        {/* <FeaturedProducts /> */}
+        <FeaturedProducts />
         <Link
         href={`/categories/`}
         className=" bg-black font-medium font-poppins  text-white rounded-md px-3 py-1 hover:bg-white hover:text-black   ">View All Products</Link>

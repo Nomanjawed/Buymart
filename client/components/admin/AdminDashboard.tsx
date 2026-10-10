@@ -74,6 +74,7 @@ const productCategories = [
   'Ships',
   'Architecture',
   'Character',
+  'Space',
 ]
 
 function getRequestError(error: unknown, fallback: string) {
