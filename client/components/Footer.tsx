@@ -1,54 +1,42 @@
-import React from 'react'
-
-
-
 const Footer = () => {
   return (
-    <div>
- <div className= "flex w-full bg-slate-100 px-10 py-10">
+    <footer className="mt-auto bg-slate-100 text-neutral-800">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-9 px-5 py-10 sm:px-8 md:grid-cols-4 md:gap-8 lg:px-10">
+        <div className="col-span-2 md:col-span-1">
+          <p className="font-mono text-xl font-bold tracking-widest">BuyMart</p>
+        </div>
 
-      <div className= " flex flex-col w-1/4">
-      
-     <div>BuyMart</div>
-      
+        <nav aria-label="Footer navigation" className="flex flex-col items-start gap-3 text-sm">
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Explore</h2>
+          <span>Home</span>
+          <span>About</span>
+          <span>Categories</span>
+          <span>Contact Us</span>
+        </nav>
+
+        <nav aria-label="Policies" className="flex flex-col items-start gap-3 text-sm">
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Policies</h2>
+          <span>Privacy policy</span>
+          <span>Return policy</span>
+          <span>Terms &amp; conditions</span>
+        </nav>
+
+        <div className="flex flex-col items-start gap-3 text-sm">
+          <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Follow us</h2>
+          <span>Instagram</span>
+          <span>Facebook</span>
+          <span>TikTok</span>
+          <span>X</span>
+        </div>
       </div>
 
-      <div className= " flex flex-col w-1/4">
-      
-      <span>Home</span>
-      <span>About</span>
-      <span>Categories</span>
-      <span>Contact Us</span>
-      
+      <div className="border-t border-neutral-300 px-5 py-4 sm:px-8 lg:px-10">
+        <p className="mx-auto max-w-7xl text-center text-xs text-neutral-600 sm:text-left">
+          © 2026 BuyMart. All rights reserved.
+        </p>
       </div>
-      <div className= " flex flex-col w-1/4">
-      
-      <span>privacy policy</span>
-      <span>return policy</span>
-      <span>terms & condition</span>
-            
-      </div>
-      <div className= " flex flex-col w-1/4">
-      
-      <span>Instagram</span>
-      <span>Facebook</span>
-      <span>Tiktok</span>
-      <span>X</span>
-            
-      </div>
-
-
-    </div>
-
-    <div className=''>
-<h1 className='text-center'>All Rights reserved @buymart.com 2026</h1>
-    </div>
-
-    </div>
-   
+    </footer>
   )
-
-
 }
 
 export default Footer

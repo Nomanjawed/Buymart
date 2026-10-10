@@ -1,6 +1,6 @@
 'use client'
 
-import { ShoppingCartMinus, UserRound } from 'lucide-react'
+import { Menu, ShoppingCartMinus, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -16,6 +16,7 @@ type HeaderUser = {
 const Header = () => {
   const pathname = usePathname()
   const [user, setUser] = useState<HeaderUser | null>(null)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { itemCount } = useCart()
 
   const navItems = [
@@ -55,21 +56,21 @@ const Header = () => {
   const initial = (displayName?.trim().charAt(0) || user?.email?.charAt(0) || '?').toUpperCase()
 
   return (
-    <header className="py-3">
-      <div className="mx-3 flex items-center justify-between">
-        <Link href="/" className="px-4 font-mono text-xl font-bold tracking-widest">BUYMART</Link>
-        <nav>
-          <ul className="flex gap-3 sm:gap-4">
+    <header className="relative z-40 bg-white px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <Link href="/" className="shrink-0 font-mono text-lg font-bold tracking-widest sm:text-xl">BUYMART</Link>
+        <nav aria-label="Main navigation" className="hidden flex-1 md:block">
+          <ul className="flex items-center justify-center gap-5 lg:gap-8">
             {navItems.map((item) => (
               <li key={item.path}>
-                <Link href={item.path} className="text-xs font-semibold hover:text-gray-500 sm:text-sm">
+                <Link href={item.path} className="whitespace-nowrap text-sm font-semibold hover:text-gray-500">
                   {item.name}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-        <div className="flex items-center gap-3 pr-4 sm:gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           {user ? (
             <Link
               href="/dashboard"
@@ -100,8 +101,35 @@ const Header = () => {
               </span>
             )}
           </Link>
+          <button
+            type="button"
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="inline-flex size-11 touch-manipulation items-center justify-center rounded-sm text-neutral-800 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a53b2b] md:hidden"
+          >
+            {isMenuOpen ? <X aria-hidden="true" size={21} /> : <Menu aria-hidden="true" size={21} />}
+          </button>
         </div>
       </div>
+      {isMenuOpen && (
+        <nav id="mobile-navigation" aria-label="Mobile navigation" className="mt-3 border-t border-neutral-200 bg-white px-1 py-2 md:hidden">
+          <ul className="mx-auto flex max-w-7xl flex-col">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <Link
+                  href={item.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-3 text-sm font-semibold hover:text-[#a53b2b]"
+                >
+                  {item.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </header>
   )
 }

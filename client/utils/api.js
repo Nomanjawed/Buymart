@@ -43,6 +43,12 @@ export const getMyOrders = async () => {
     return Array.isArray(orders) ? orders : [];
 };
 
+export const getAllOrders = async () => {
+    const { data: response } = await api.get('/order/all');
+    const orders = response?.orders ?? response?.data?.orders ?? [];
+    return Array.isArray(orders) ? orders : [];
+};
+
 export const createOrder = async (products) => {
     const { data } = await api.post('/order', { products });
     return data?.order ?? data?.data?.order ?? data;

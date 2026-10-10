@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins, } from "next/font/google";
+import { Poppins, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,6 +10,19 @@ const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
 });
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  variable: "--font-bebas-neue",
+  subsets: ["latin"],
+});
+
+// .bebas-neue-regular {
+//   font-family: "Bebas Neue", sans-serif;
+//   font-weight: 400;
+//   font-style: normal;
+// }
+
 
 // const geistMono = Geist_Mono({
 //   variable: "--font-geist-mono",
@@ -25,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${poppins.variable} h-full antialiased`}
+      className={`${poppins.variable} ${bebasNeue.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <CartProvider>

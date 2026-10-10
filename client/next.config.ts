@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       }, 
     ],
   },
+  allowedDevOrigins: ['trump-storm-endowment.ngrok-free.dev'],
 };
 
 export default nextConfig;

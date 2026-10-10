@@ -3,8 +3,10 @@
 import Image from 'next/image'
 import {
   ClipboardList,
+  Eye,
   ImagePlus,
   LayoutDashboard,
+  LoaderCircle,
   LogOut,
   Package,
   Pencil,
@@ -20,12 +22,12 @@ import { useRouter } from 'next/navigation'
 import {
   createProduct as createProductRequest,
   deleteProduct as deleteProductRequest,
+  getAllOrders,
   getAllProducts,
   getMe,
   logout,
   updateProduct as updateProductRequest,
 } from '@/utils/api'
-import { log } from 'console'
 
 type Product = {
   id: string
@@ -40,6 +42,16 @@ type ProductDraft = Omit<Product, 'id'>
 type DashboardView = 'products' | 'orders'
 type ApiProduct = Omit<Product, 'id'> & { _id?: string; id?: string }
 type ProductPagination = { page: number; totalPages: number; totalProducts: number }
+type AdminOrder = {
+  _id: string
+  createdAt?: string
+  userId?: { fullname?: string; username?: string; email?: string } | null
+  products: Array<{
+    quantity: number
+    calculatedPrice?: number
+    product?: { name?: string; category?: string; price?: number } | null
+  }>
+}
 
 const emptyDraft: ProductDraft = {
   name: '',
@@ -53,6 +65,16 @@ const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
 })
+const productCategories = [
+  'Cars',
+  'Bikes',
+  'Aircraft',
+  'Fighter Jets',
+  'Chess',
+  'Ships',
+  'Architecture',
+  'Character',
+]
 
 function getRequestError(error: unknown, fallback: string) {
   if (axios.isAxiosError<{ message?: unknown }>(error)) {
@@ -61,6 +83,21 @@ function getRequestError(error: unknown, fallback: string) {
   }
 
   return error instanceof Error ? error.message : fallback
+}
+
+function getOrderTotal(order: AdminOrder) {
+  return order.products.reduce((total, item) => {
+    return total + (item.calculatedPrice ?? (item.product?.price ?? 0) * item.quantity)
+  }, 0)
+}
+
+function formatOrderDate(value?: string) {
+  if (!value) return 'Date unavailable'
+
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? 'Date unavailable'
+    : new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(date)
 }
 
 function ProductEditor({
@@ -185,14 +222,17 @@ function ProductEditor({
             </label>
             <label className="space-y-2 text-sm font-medium">
               Category
-              <input
+              <select
                 required
-                maxLength={60}
                 value={draft.category}
                 onChange={(event) => setDraft({ ...draft, category: event.target.value })}
-                placeholder="e.g. Cars"
                 className="h-11 w-full border border-neutral-300 px-3 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
-              />
+              >
+                <option value="" disabled>Select a category</option>
+                {productCategories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -281,6 +321,10 @@ export default function AdminDashboard() {
   const [accessError, setAccessError] = useState('')
   const [activeView, setActiveView] = useState<DashboardView>('products')
   const [products, setProducts] = useState<Product[]>([])
+  const [orders, setOrders] = useState<AdminOrder[]>([])
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
+  const [isOrdersLoading, setIsOrdersLoading] = useState(false)
+  const [ordersError, setOrdersError] = useState('')
   const [page, setPage] = useState(1)
   const [reloadKey, setReloadKey] = useState(0)
   const [pagination, setPagination] = useState<ProductPagination>({
@@ -373,6 +417,38 @@ export default function AdminDashboard() {
     }
   }, [hasAdminAccess, page, reloadKey])
 
+  useEffect(() => {
+    if (!hasAdminAccess || activeView !== 'orders') return
+
+    let isCurrentRequest = true
+
+    getAllOrders()
+      .then((result: AdminOrder[]) => {
+        if (!isCurrentRequest) return
+
+        setOrders(result)
+        setOrdersError('')
+      })
+      .catch((error: unknown) => {
+        if (!isCurrentRequest) return
+
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          logout()
+          router.replace('/auth')
+          return
+        }
+
+        setOrdersError(getRequestError(error, 'Orders could not be loaded.'))
+      })
+      .finally(() => {
+        if (isCurrentRequest) setIsOrdersLoading(false)
+      })
+
+    return () => {
+      isCurrentRequest = false
+    }
+  }, [activeView, hasAdminAccess, router])
+
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return products
@@ -442,6 +518,12 @@ export default function AdminDashboard() {
     router.replace('/auth')
   }
 
+  function openOrders() {
+    setOrdersError('')
+    setIsOrdersLoading(true)
+    setActiveView('orders')
+  }
+
   if (isCheckingAccess || !hasAdminAccess) {
     return (
       <main className="flex min-h-[60vh] flex-1 items-center justify-center bg-[#f3f4f0] px-5 text-center">
@@ -501,7 +583,7 @@ export default function AdminDashboard() {
             <button
               type="button"
               aria-current={activeView === 'orders' ? 'page' : undefined}
-              onClick={() => setActiveView('orders')}
+              onClick={openOrders}
               className={`inline-flex h-11 shrink-0 items-center gap-3 px-3 text-sm font-medium transition lg:w-full ${activeView === 'orders' ? 'bg-[#243b33] text-white' : 'text-neutral-600 hover:bg-white'}`}
             >
               <ClipboardList size={17} aria-hidden="true" /> Orders
@@ -673,12 +755,22 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="mb-5 grid gap-3 sm:grid-cols-3">
-                  {['All orders', 'Processing', 'Completed'].map((label) => (
-                    <div key={label} className="border border-[#d9ddd6] bg-white px-4 py-3">
-                      <p className="text-xs text-neutral-500">{label}</p>
-                      <p className="mt-1 text-2xl font-semibold">—</p>
-                    </div>
-                  ))}
+                  <div className="border border-[#d9ddd6] bg-white px-4 py-3">
+                    <p className="text-xs text-neutral-500">Total orders</p>
+                    <p className="mt-1 text-2xl font-semibold">{isOrdersLoading ? '—' : orders.length}</p>
+                  </div>
+                  <div className="border border-[#d9ddd6] bg-white px-4 py-3">
+                    <p className="text-xs text-neutral-500">Items ordered</p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {isOrdersLoading ? '—' : orders.reduce((total, order) => total + order.products.reduce((count, item) => count + item.quantity, 0), 0)}
+                    </p>
+                  </div>
+                  <div className="border border-[#d9ddd6] bg-white px-4 py-3">
+                    <p className="text-xs text-neutral-500">Order value</p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {isOrdersLoading ? '—' : currency.format(orders.reduce((total, order) => total + getOrderTotal(order), 0))}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto border border-[#d9ddd6] bg-white">
@@ -691,16 +783,58 @@ export default function AdminDashboard() {
                         <th className="px-5 py-3">Placed</th>
                         <th className="px-5 py-3 text-right">Total</th>
                         <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3 text-right">Details</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td colSpan={6} className="px-5 py-16 text-center">
-                          <ClipboardList size={26} aria-hidden="true" className="mx-auto text-neutral-400" />
-                          <p className="mt-3 font-semibold">Order data isn&apos;t connected yet</p>
-                          <p className="mt-1 text-sm text-neutral-500">Orders will appear here when the admin orders API is integrated.</p>
-                        </td>
-                      </tr>
+                      {isOrdersLoading ? (
+                        <tr>
+                          <td colSpan={7} className="px-5 py-16 text-center text-sm text-neutral-500">
+                            <LoaderCircle size={22} aria-hidden="true" className="mx-auto mb-3 animate-spin" />
+                            Loading orders…
+                          </td>
+                        </tr>
+                      ) : ordersError ? (
+                        <tr>
+                          <td colSpan={7} role="alert" className="px-5 py-16 text-center text-sm text-red-700">{ordersError}</td>
+                        </tr>
+                      ) : orders.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-5 py-16 text-center">
+                            <ClipboardList size={26} aria-hidden="true" className="mx-auto text-neutral-400" />
+                            <p className="mt-3 font-semibold">No orders yet</p>
+                            <p className="mt-1 text-sm text-neutral-500">Customer orders will appear here.</p>
+                          </td>
+                        </tr>
+                      ) : orders.map((order) => (
+                        <tr key={order._id} className="border-b border-neutral-100 last:border-0">
+                          <td className="px-5 py-4 text-sm font-semibold">#{order._id.slice(-8).toUpperCase()}</td>
+                          <td className="px-5 py-4">
+                            <p className="text-sm font-medium">{order.userId?.fullname || order.userId?.username || 'Customer unavailable'}</p>
+                            <p className="mt-1 text-xs text-neutral-500">{order.userId?.email || 'No email'}</p>
+                          </td>
+                          <td className="max-w-64 px-5 py-4 text-sm">
+                            <p>{order.products.reduce((count, item) => count + item.quantity, 0)} items</p>
+                            <p className="mt-1 truncate text-xs text-neutral-500">
+                              {order.products.map((item) => item.product?.name || 'Product unavailable').join(', ')}
+                            </p>
+                          </td>
+                          <td className="whitespace-nowrap px-5 py-4 text-sm text-neutral-600">{formatOrderDate(order.createdAt)}</td>
+                          <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold">{currency.format(getOrderTotal(order))}</td>
+                          <td className="px-5 py-4 text-sm text-neutral-600">Received</td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              type="button"
+                              aria-label={`View order ${order._id.slice(-8)}`}
+                              title="View order details"
+                              onClick={() => setSelectedOrder(order)}
+                              className="inline-flex size-9 items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-[#243b33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31493e]"
+                            >
+                              <Eye size={17} aria-hidden="true" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -709,6 +843,87 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {selectedOrder && (
+        <div
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedOrder(null)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setSelectedOrder(null)
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#101b17]/55 p-4"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-detail-title"
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto bg-white shadow-2xl"
+          >
+            <header className="flex items-start justify-between border-b border-neutral-200 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#78847b]">Order details</p>
+                <h2 id="order-detail-title" className="mt-1 text-lg font-semibold">
+                  #{selectedOrder._id.slice(-8).toUpperCase()}
+                </h2>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                aria-label="Close order details"
+                onClick={() => setSelectedOrder(null)}
+                className="inline-flex size-9 items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="space-y-5 px-5 py-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Customer</p>
+                <p className="mt-1 text-sm font-medium">
+                  {selectedOrder.userId?.fullname || selectedOrder.userId?.username || 'Customer unavailable'}
+                </p>
+                <p className="mt-0.5 break-all text-sm text-neutral-600">
+                  {selectedOrder.userId?.email || 'No email available'}
+                </p>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Items</p>
+                  <time className="text-xs text-neutral-500" dateTime={selectedOrder.createdAt}>
+                    {formatOrderDate(selectedOrder.createdAt)}
+                  </time>
+                </div>
+                <ul className="divide-y divide-neutral-200 border-y border-neutral-200">
+                  {selectedOrder.products.map((item, index) => {
+                    const lineTotal = item.calculatedPrice ?? (item.product?.price ?? 0) * item.quantity
+
+                    return (
+                      <li key={`${selectedOrder._id}-${index}`} className="flex justify-between gap-4 py-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{item.product?.name || 'Product unavailable'}</p>
+                          <p className="mt-0.5 text-xs text-neutral-500">
+                            Qty {item.quantity} · {currency.format(lineTotal / item.quantity)} each
+                          </p>
+                        </div>
+                        <p className="shrink-0 font-semibold">{currency.format(lineTotal)}</p>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-neutral-200 pt-4">
+                <span className="text-sm font-semibold">Order total</span>
+                <span className="text-base font-semibold">{currency.format(getOrderTotal(selectedOrder))}</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
 
       {isEditorOpen && (
         <ProductEditor

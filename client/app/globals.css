@@ -9,3 +9,13 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+@layer utilities {
+
+  .font-poppins {
+    font-family: var(--font-poppins), 'Poppins', sans-serif;
+  }
+   .font-bebas-neue {
+    font-family: var(--font-bebas-neue), 'Bebas Neue', sans-serif;
+  }
+}
