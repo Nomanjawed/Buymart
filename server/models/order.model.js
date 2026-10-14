@@ -24,10 +24,75 @@ const orderSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-      }
-    ]
+      },
+    ],
+
+    shippingDetails: {
+      fullName: {
+        type: String,
+        required: true,
+      },
+      phone: {
+        type: String,
+        required: true,
+      },
+      address: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      postalCode: {
+        type: String,
+      },
+    },
+
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    orderStatus: {
+      type: String,
+      enum: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+      default: "pending",
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["stripe", "cod"],
+      default: "stripe",
+      required: true, 
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+    },
+
+    stripeCheckoutSessionId: {
+      type: String,
+      default: null,
+    },
+
+    stripePaymentIntentId: {
+      type: String,
+      default: null,
+    },
 
   },
+  
   {
     timestamps: true,
   }
