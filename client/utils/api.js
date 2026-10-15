@@ -49,6 +49,16 @@ export const getAllOrders = async () => {
     return Array.isArray(orders) ? orders : [];
 };
 
+export const updateOrderStatus = async (orderNumber, orderStatus) => {
+    const { data } = await api.patch(`/order/${encodeURIComponent(orderNumber)}/status`, { orderStatus });
+    return data?.order ?? data?.data?.order ?? data;
+};
+
+export const trackOrderByNumber = async (orderNumber) => {
+    const { data } = await api.get(`/order/track/${encodeURIComponent(orderNumber)}`);
+    return data?.order ?? data?.data?.order ?? data;
+};
+
 export const createOrder = async (products, shippingDetails) => {
     const { data } = await api.post('/order', { products, shippingDetails });
     return data?.order ?? data?.data?.order ?? data;

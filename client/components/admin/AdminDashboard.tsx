@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Save,
   ShieldCheck,
   Trash2,
   X,
@@ -26,6 +27,7 @@ import {
   getAllProducts,
   getMe,
   logout,
+  updateOrderStatus,
   updateProduct as updateProductRequest,
 } from '@/utils/api'
 
@@ -42,14 +44,25 @@ type ProductDraft = Omit<Product, 'id'>
 type DashboardView = 'products' | 'orders'
 type ApiProduct = Omit<Product, 'id'> & { _id?: string; id?: string }
 type ProductPagination = { page: number; totalPages: number; totalProducts: number }
+type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+const orderStatuses: OrderStatus[] = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
 type AdminOrder = {
   _id: string
+  orderNumber?: string
+  orderStatus?: OrderStatus
   createdAt?: string
   userId?: { fullname?: string; username?: string; email?: string } | null
+  shippingDetails?: {
+    fullName?: string
+    phone?: string
+    address?: string
+    city?: string
+    postalCode?: string
+  }
   products: Array<{
     quantity: number
     calculatedPrice?: number
-    product?: { name?: string; category?: string; price?: number } | null
+    product?: { name?: string; category?: string; image?: string; price?: number } | null
   }>
 }
 
@@ -324,6 +337,8 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
+  const [pendingOrderStatuses, setPendingOrderStatuses] = useState<Record<string, OrderStatus>>({})
+  const [updatingOrderNumber, setUpdatingOrderNumber] = useState<string | null>(null)
   const [isOrdersLoading, setIsOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState('')
   const [page, setPage] = useState(1)
@@ -525,6 +540,37 @@ export default function AdminDashboard() {
     setActiveView('orders')
   }
 
+  async function saveOrderStatus(order: AdminOrder) {
+    if (!order.orderNumber || updatingOrderNumber) return
+
+    const orderStatus = pendingOrderStatuses[order.orderNumber] ?? order.orderStatus ?? 'pending'
+    if (orderStatus === order.orderStatus) return
+
+    setUpdatingOrderNumber(order.orderNumber)
+    setMutationError('')
+
+    try {
+      await updateOrderStatus(order.orderNumber, orderStatus)
+      setOrders((currentOrders) => currentOrders.map((currentOrder) =>
+        currentOrder.orderNumber === order.orderNumber ? { ...currentOrder, orderStatus } : currentOrder,
+      ))
+      setSelectedOrder((currentOrder) => {
+        if (!currentOrder || currentOrder.orderNumber !== order.orderNumber) return currentOrder
+        return { ...currentOrder, orderStatus }
+      })
+      setPendingOrderStatuses((currentStatuses) => {
+        const nextStatuses = { ...currentStatuses }
+        delete nextStatuses[order.orderNumber!]
+        return nextStatuses
+      })
+      setNotice(`Order ${order.orderNumber} updated to ${orderStatus}.`)
+    } catch (error) {
+      setMutationError(getRequestError(error, 'The order status could not be updated.'))
+    } finally {
+      setUpdatingOrderNumber(null)
+    }
+  }
+
   if (isCheckingAccess || !hasAdminAccess) {
     return (
       <main className="flex min-h-[60vh] flex-1 items-center justify-center bg-[#f3f4f0] px-5 text-center">
@@ -552,9 +598,9 @@ export default function AdminDashboard() {
         <header className="mb-8 flex flex-wrap items-end justify-between gap-5 border-b border-[#d9ddd6] pb-6">
           <div>
             <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#a53b2b]">
-              <ShieldCheck size={15} aria-hidden="true" /> Buymart / Admin console
+              <ShieldCheck size={15} aria-hidden="true" /> Hobbly / Admin console
             </p>
-            <h1 className="text-3xl font-semibold sm:text-4xl">Store operations</h1>
+            <h1 className="text-3xl font-semibold font-poppins sm:text-4xl">Store operations</h1>
             <p className="mt-2 text-sm text-neutral-600">Manage the product catalogue and review incoming orders.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -577,7 +623,7 @@ export default function AdminDashboard() {
               type="button"
               aria-current={activeView === 'products' ? 'page' : undefined}
               onClick={() => setActiveView('products')}
-              className={`inline-flex h-11 shrink-0 items-center gap-3 px-3 text-sm font-medium transition lg:w-full ${activeView === 'products' ? 'bg-[#243b33] text-white' : 'text-neutral-600 hover:bg-white'}`}
+              className={`inline-flex h-11 shrink-0 items-center gap-3 px-3 text-sm font-medium transition lg:w-full ${activeView === 'products' ? 'bg-black text-white' : 'text-neutral-600 hover:bg-white'}`}
             >
               <Package size={17} aria-hidden="true" /> Products
             </button>
@@ -585,7 +631,7 @@ export default function AdminDashboard() {
               type="button"
               aria-current={activeView === 'orders' ? 'page' : undefined}
               onClick={openOrders}
-              className={`inline-flex h-11 shrink-0 items-center gap-3 px-3 text-sm font-medium transition lg:w-full ${activeView === 'orders' ? 'bg-[#243b33] text-white' : 'text-neutral-600 hover:bg-white'}`}
+              className={`inline-flex h-11 shrink-0 items-center gap-3 px-3 text-sm font-medium transition lg:w-full ${activeView === 'orders' ? 'bg-black text-white' : 'text-neutral-600 hover:bg-white'}`}
             >
               <ClipboardList size={17} aria-hidden="true" /> Orders
             </button>
@@ -775,7 +821,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="overflow-x-auto border border-[#d9ddd6] bg-white">
-                  <table className="w-full min-w-170 text-left">
+                  <table className="w-full min-w-225 text-left">
                     <thead className="border-b border-neutral-200 bg-[#f8f9f6] text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       <tr>
                         <th className="px-5 py-3">Order</th>
@@ -783,7 +829,7 @@ export default function AdminDashboard() {
                         <th className="px-5 py-3">Items</th>
                         <th className="px-5 py-3">Placed</th>
                         <th className="px-5 py-3 text-right">Total</th>
-                        <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3">Order status</th>
                         <th className="px-5 py-3 text-right">Details</th>
                       </tr>
                     </thead>
@@ -809,9 +855,9 @@ export default function AdminDashboard() {
                         </tr>
                       ) : orders.map((order) => (
                         <tr key={order._id} className="border-b border-neutral-100 last:border-0">
-                          <td className="px-5 py-4 text-sm font-semibold">#{order._id.slice(-8).toUpperCase()}</td>
+                          <td className="px-5 py-4 text-sm font-semibold">{order.orderNumber || `#${order._id.slice(-8).toUpperCase()}`}</td>
                           <td className="px-5 py-4">
-                            <p className="text-sm font-medium">{order.userId?.fullname || order.userId?.username || 'Customer unavailable'}</p>
+                            <p className="text-sm font-medium">{order.shippingDetails?.fullName || order.userId?.fullname || order.userId?.username || 'Customer unavailable'}</p>
                             <p className="mt-1 text-xs text-neutral-500">{order.userId?.email || 'No email'}</p>
                           </td>
                           <td className="max-w-64 px-5 py-4 text-sm">
@@ -822,7 +868,35 @@ export default function AdminDashboard() {
                           </td>
                           <td className="whitespace-nowrap px-5 py-4 text-sm text-neutral-600">{formatOrderDate(order.createdAt)}</td>
                           <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-semibold">{currency.format(getOrderTotal(order))}</td>
-                          <td className="px-5 py-4 text-sm text-neutral-600">Received</td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col items-start gap-2">
+                              <span className="text-xs font-semibold capitalize text-neutral-700">{order.orderStatus || 'pending'}</span>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  aria-label={`Set status for ${order.orderNumber || order._id}`}
+                                  value={pendingOrderStatuses[order.orderNumber || order._id] ?? order.orderStatus ?? 'pending'}
+                                  onChange={(event) => setPendingOrderStatuses((currentStatuses) => ({
+                                    ...currentStatuses,
+                                    [order.orderNumber || order._id]: event.target.value as OrderStatus,
+                                  }))}
+                                  className="h-9 border border-neutral-300 bg-white px-2 text-xs outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                                >
+                                  {orderStatuses.map((status) => (
+                                    <option key={status} value={status}>{status}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={!order.orderNumber || updatingOrderNumber === order.orderNumber || (pendingOrderStatuses[order.orderNumber || order._id] ?? order.orderStatus ?? 'pending') === order.orderStatus}
+                                  onClick={() => saveOrderStatus(order)}
+                                  className="inline-flex h-9 items-center gap-1 bg-red-900 px-2 text-xs font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  {updatingOrderNumber === order.orderNumber ? <LoaderCircle size={13} className="animate-spin" aria-hidden="true" /> : <Save size={13} aria-hidden="true" />}
+                                  Update
+                                </button>
+                              </div>
+                            </div>
+                          </td>
                           <td className="px-5 py-4 text-right">
                             <button
                               type="button"
@@ -866,7 +940,7 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#78847b]">Order details</p>
                 <h2 id="order-detail-title" className="mt-1 text-lg font-semibold">
-                  #{selectedOrder._id.slice(-8).toUpperCase()}
+                  {selectedOrder.orderNumber || `#${selectedOrder._id.slice(-8).toUpperCase()}`}
                 </h2>
               </div>
               <button
@@ -884,11 +958,33 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Customer</p>
                 <p className="mt-1 text-sm font-medium">
-                  {selectedOrder.userId?.fullname || selectedOrder.userId?.username || 'Customer unavailable'}
+                  {selectedOrder.shippingDetails?.fullName || selectedOrder.userId?.fullname || selectedOrder.userId?.username || 'Customer unavailable'}
                 </p>
                 <p className="mt-0.5 break-all text-sm text-neutral-600">
                   {selectedOrder.userId?.email || 'No email available'}
                 </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Shipping details</p>
+                <dl className="mt-2 grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs text-neutral-500">Phone</dt>
+                    <dd className="mt-0.5">{selectedOrder.shippingDetails?.phone || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">City</dt>
+                    <dd className="mt-0.5">{selectedOrder.shippingDetails?.city || 'Not provided'}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs text-neutral-500">Address</dt>
+                    <dd className="mt-0.5 wrap-break-word">{selectedOrder.shippingDetails?.address || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">Postal code</dt>
+                    <dd className="mt-0.5">{selectedOrder.shippingDetails?.postalCode || 'Not provided'}</dd>
+                  </div>
+                </dl>
               </div>
 
               <div>
@@ -898,17 +994,30 @@ export default function AdminDashboard() {
                     {formatOrderDate(selectedOrder.createdAt)}
                   </time>
                 </div>
+                <p className="mb-2 text-xs font-medium capitalize text-[#52645a]">Status: {selectedOrder.orderStatus || 'pending'}</p>
                 <ul className="divide-y divide-neutral-200 border-y border-neutral-200">
                   {selectedOrder.products.map((item, index) => {
                     const lineTotal = item.calculatedPrice ?? (item.product?.price ?? 0) * item.quantity
 
                     return (
-                      <li key={`${selectedOrder._id}-${index}`} className="flex justify-between gap-4 py-3 text-sm">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{item.product?.name || 'Product unavailable'}</p>
-                          <p className="mt-0.5 text-xs text-neutral-500">
-                            Qty {item.quantity} · {currency.format(lineTotal / item.quantity)} each
-                          </p>
+                      <li key={`${selectedOrder._id}-${index}`} className="flex items-center justify-between gap-4 py-3 text-sm">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="relative size-12 shrink-0 overflow-hidden bg-neutral-100">
+                            <Image
+                              src={item.product?.image || '/Hero.png'}
+                              alt={item.product?.name || 'Ordered product'}
+                              fill
+                              unoptimized
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{item.product?.name || 'Product unavailable'}</p>
+                            <p className="mt-0.5 text-xs text-neutral-500">
+                              Qty {item.quantity} · {currency.format(lineTotal / item.quantity)} each
+                            </p>
+                          </div>
                         </div>
                         <p className="shrink-0 font-semibold">{currency.format(lineTotal)}</p>
                       </li>

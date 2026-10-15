@@ -1,10 +1,10 @@
 'use client'
 
 import axios from 'axios'
-import { CalendarDays, LogOut, Mail, Package, UserRound } from 'lucide-react'
+import { CalendarDays, LoaderCircle, LogOut, Mail, Package, Search, UserRound } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { getMe, getMyOrders, logout } from '@/utils/api'
+import { useEffect, useState, type FormEvent } from 'react'
+import { getMe, getMyOrders, logout, trackOrderByNumber } from '@/utils/api'
 
 type UserProfile = {
   _id?: string
@@ -26,8 +26,17 @@ type OrderItem = {
 
 type CustomerOrder = {
   _id: string
+  orderNumber?: string
+  orderStatus?: string
   createdAt?: string
+  updatedAt?: string
   products: OrderItem[]
+}
+
+type TrackedOrder = {
+  orderNumber: string
+  orderStatus: string
+  updatedAt?: string
 }
 
 function formatDate(value?: string) {
@@ -46,6 +55,32 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [pageError, setPageError] = useState('')
   const [ordersError, setOrdersError] = useState('')
+  const [trackingNumber, setTrackingNumber] = useState('')
+  const [trackedOrder, setTrackedOrder] = useState<TrackedOrder | null>(null)
+  const [isTracking, setIsTracking] = useState(false)
+  const [trackingError, setTrackingError] = useState('')
+
+  async function handleTrackOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const orderNumber = trackingNumber.trim()
+    if (!orderNumber || isTracking) return
+
+    setIsTracking(true)
+    setTrackingError('')
+    setTrackedOrder(null)
+
+    try {
+      const result = await trackOrderByNumber(orderNumber) as TrackedOrder
+      setTrackedOrder(result)
+    } catch (error) {
+      const responseMessage = axios.isAxiosError<{ message?: unknown }>(error)
+        ? error.response?.data?.message
+        : null
+      setTrackingError(typeof responseMessage === 'string' ? responseMessage : 'We could not find that order.')
+    } finally {
+      setIsTracking(false)
+    }
+  }
 
   useEffect(() => {
     let isActive = true
@@ -191,6 +226,42 @@ export default function DashboardPage() {
             )}
           </div>
 
+          <section aria-labelledby="track-order-heading" className="mb-6 border border-neutral-200 bg-white p-5 sm:p-6">
+            <h3 id="track-order-heading" className="font-semibold">Track an order</h3>
+            <p className="mt-1 text-sm text-neutral-600">Enter the order number from your confirmation.</p>
+            <form onSubmit={handleTrackOrder} className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <label className="sr-only" htmlFor="tracking-order-number">Order number</label>
+              <input
+                id="tracking-order-number"
+                value={trackingNumber}
+                onChange={(event) => setTrackingNumber(event.target.value)}
+                placeholder="e.g. ORD-123456789-123"
+                required
+                className="h-11 min-w-0 flex-1 border border-neutral-300 px-3 text-sm outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+              />
+              <button
+                type="submit"
+                disabled={isTracking}
+                className="inline-flex h-11 items-center justify-center gap-2 bg-[#243b33] px-4 text-sm font-semibold text-white hover:bg-[#365346] disabled:cursor-wait disabled:opacity-60"
+              >
+                {isTracking ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Search size={16} aria-hidden="true" />}
+                Track order
+              </button>
+            </form>
+            {trackingError && <p role="alert" className="mt-3 text-sm text-[#a53b2b]">{trackingError}</p>}
+            {trackedOrder && (
+              <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-emerald-700 bg-[#f4f7f3] px-4 py-3">
+                <div>
+                  <p className="text-xs text-neutral-500">Order {trackedOrder.orderNumber}</p>
+                  <p className="mt-1 font-semibold capitalize">{trackedOrder.orderStatus}</p>
+                </div>
+                {trackedOrder.updatedAt && (
+                  <p className="text-xs text-neutral-500">Updated {formatDate(trackedOrder.updatedAt)}</p>
+                )}
+              </div>
+            )}
+          </section>
+
           {isLoading ? (
             <div aria-live="polite" className="border border-neutral-200 bg-white px-5 py-8 text-sm text-neutral-500">
               Loading your orders…
@@ -210,7 +281,10 @@ export default function DashboardPage() {
               {orders.map((order) => (
                 <article key={order._id} className="p-5 sm:p-6">
                   <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <h3 className="text-sm font-semibold">Order #{order._id.slice(-8).toUpperCase()}</h3>
+                    <div>
+                      <h3 className="text-sm font-semibold">{order.orderNumber || `Order #${order._id.slice(-8).toUpperCase()}`}</h3>
+                      {order.orderStatus && <p className="mt-1 text-xs font-medium capitalize text-[#52645a]">{order.orderStatus}</p>}
+                    </div>
                     <time className="text-xs text-neutral-500" dateTime={order.createdAt}>
                       {formatDate(order.createdAt)}
                     </time>
