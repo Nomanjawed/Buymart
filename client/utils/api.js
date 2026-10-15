@@ -49,14 +49,19 @@ export const getAllOrders = async () => {
     return Array.isArray(orders) ? orders : [];
 };
 
-export const createOrder = async (products) => {
-    const { data } = await api.post('/order', { products });
+export const createOrder = async (products, shippingDetails) => {
+    const { data } = await api.post('/order', { products, shippingDetails });
     return data?.order ?? data?.data?.order ?? data;
 };
 
 export const getAllProducts = async (page = 1) => {
     const { data } = await api.get('/product/all', { params: { page } });
     return data?.data ?? data;
+};
+
+export const getSingleProductById = async (productId) => {
+    const { data } = await api.get(`/product/${productId}`);
+    return data?.product ?? data?.data?.product ?? data?.data ?? data;
 };
 
 export const getFeaturedProducts = async () => {

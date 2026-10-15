@@ -24,7 +24,7 @@ type CartContextValue = {
   itemCount: number
   subtotal: number
   isHydrated: boolean
-  addItem: (item: NewCartItem) => void
+  addItem: (item: NewCartItem, quantity?: number) => void
   setQuantity: (id: string, quantity: number) => void
   removeItem: (id: string) => void
   clearCart: () => void
@@ -59,19 +59,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [isHydrated, items])
 
-  function addItem(item: NewCartItem) {
+  function addItem(item: NewCartItem, quantity = 1) {
+    if (!Number.isInteger(quantity) || quantity < 1) return
+
     setItems((currentItems) => {
       const existingItem = currentItems.find((currentItem) => currentItem.id === item.id)
 
       if (existingItem) {
         return currentItems.map((currentItem) =>
           currentItem.id === item.id
-            ? { ...currentItem, quantity: currentItem.quantity + 1 }
+            ? { ...currentItem, quantity: currentItem.quantity + quantity }
             : currentItem,
         )
       }
 
-      return [...currentItems, { ...item, quantity: 1 }]
+      return [...currentItems, { ...item, quantity }]
     })
   }
 

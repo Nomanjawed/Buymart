@@ -15,10 +15,6 @@ type FeaturedProduct = {
   price: number
 }
 
-function toCategorySlug(category: string) {
-  return category.toLowerCase().trim().replace(/\s+/g, '-')
-}
-
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<FeaturedProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -44,7 +40,27 @@ export default function FeaturedProducts() {
   }, [])
 
   if (isLoading) {
-    return <p role="status" className="my-6 text-center text-sm text-neutral-500">Loading featured products...</p>
+    return (
+      <div
+        role="status"
+        aria-label="Loading featured products"
+        className="my-4 -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-3 pb-3 scrollbar-none md:justify-center md:gap-6 md:px-8"
+      >
+        {Array.from({ length: 5 }, (_, index) => (
+          <div
+            key={index}
+            aria-hidden="true"
+            className="relative aspect-square w-48 shrink-0 animate-pulse overflow-hidden rounded-lg bg-neutral-200 md:w-56"
+          >
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-linear-to-t from-black/70 via-black/45 to-transparent px-3 py-3 sm:px-4">
+              <div className="h-4 w-2/3 rounded-sm bg-white/45" />
+              <div className="size-10 shrink-0 rounded-full bg-white/70" />
+            </div>
+          </div>
+        ))}
+        <span className="sr-only">Loading featured products...</span>
+      </div>
+    )
   }
 
   if (hasError) {
@@ -71,8 +87,8 @@ export default function FeaturedProducts() {
             className="object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
           />
           <Link
-            href={`/products/${toCategorySlug(product.category)}`}
-            aria-label={`Browse ${product.name}, ${product.category}`}
+            href={`/categories/${product._id ?? product.id ?? ''}`}
+            aria-label={`View ${product.name}`}
             className="absolute inset-0 z-10 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-2 bg-linear-to-t from-black/85 via-black/65 to-black/20 px-3 py-3 opacity-100 transition-opacity duration-200 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 sm:px-4">

@@ -31,7 +31,7 @@ const Categories = () => {
         {categories.map((category) => (
           <Link
             key={category.name}
-            href={`/products/${category.name}`}
+            href={`/categories`}
             aria-label={`Browse ${category.name}`}
             className="group relative aspect-square w-48 shrink-0 snap-start overflow-hidden rounded-lg bg-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 md:w-56 "
           >

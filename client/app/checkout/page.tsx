@@ -5,13 +5,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, LoaderCircle, LockKeyhole, ShoppingBag, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useCart } from '@/components/cart/CartProvider'
 import { createOrder, getMe, logout } from '@/utils/api'
 
 type PlacedOrder = {
   _id?: string
   id?: string
+  orderNumber?: string
 }
 
 const currency = new Intl.NumberFormat('en-US', {
@@ -68,17 +69,30 @@ export default function CheckoutPage() {
     }
   }, [router])
 
-  async function handlePlaceOrder() {
+  async function handlePlaceOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (!hasCustomerAccess || items.length === 0 || isPlacingOrder) return
 
     setIsPlacingOrder(true)
     setError('')
 
+    const formData = new FormData(event.currentTarget)
+    const shippingDetails = {
+      fullName: String(formData.get('fullName') || '').trim(),
+      phone: String(formData.get('phone') || '').trim(),
+      address: String(formData.get('address') || '').trim(),
+      city: String(formData.get('city') || '').trim(),
+      postalCode: String(formData.get('postalCode') || '').trim(),
+    }
+
     try {
-      const result = await createOrder(items.map((item) => ({
-        product: item.id,
-        quantity: item.quantity,
-      }))) as PlacedOrder
+      const result = await createOrder(
+        items.map((item) => ({
+          product: item.id,
+          quantity: item.quantity,
+        })),
+        shippingDetails,
+      ) as PlacedOrder
 
       setOrder(result)
       clearCart()
@@ -136,7 +150,11 @@ export default function CheckoutPage() {
           <CheckCircle2 size={38} className="mx-auto text-emerald-700" aria-hidden="true" />
           <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#78847b]">Order confirmed</p>
           <h1 className="mt-2 text-3xl font-semibold">Thank you for your order</h1>
-          {order._id && <p className="mt-3 text-sm text-neutral-600">Order #{order._id.slice(-8).toUpperCase()}</p>}
+          {(order.orderNumber || order._id) && (
+            <p className="mt-3 text-sm text-neutral-600">
+              Order #{order.orderNumber || order._id?.slice(-8).toUpperCase()}
+            </p>
+          )}
           <p className="mt-2 text-sm text-neutral-600">Your order has been received and is being prepared.</p>
           <Link href="/dashboard" className="mt-7 inline-flex h-11 items-center justify-center bg-black px-5 text-sm font-semibold text-white hover:bg-[#365346]">
             View your account
@@ -189,25 +207,85 @@ export default function CheckoutPage() {
             </Link>
           </section>
         ) : (
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
-            <section aria-labelledby="review-items-heading" className="border-y border-[#deded7]">
-              <h2 id="review-items-heading" className="sr-only">Items in your order</h2>
-              {items.map((item) => (
-                <article key={item.id} className="flex gap-4 border-b border-[#deded7] py-5 last:border-b-0 sm:gap-6">
-                  <div className="relative size-20 shrink-0 overflow-hidden bg-[#e9e7e0] sm:size-24">
-                    <Image src={item.image} alt={item.name} fill unoptimized sizes="96px" className="object-cover" />
-                  </div>
-                  <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs text-[#78847b]">{item.category}</p>
-                      <h3 className="mt-1 truncate text-sm font-semibold">{item.name}</h3>
-                      <p className="mt-1 text-xs text-neutral-500">Quantity {item.quantity}</p>
+          <form onSubmit={handlePlaceOrder} className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
+            <div className="min-w-0">
+              <section aria-labelledby="review-items-heading" className="border-y border-[#deded7]">
+                <h2 id="review-items-heading" className="sr-only">Items in your order</h2>
+                {items.map((item) => (
+                  <article key={item.id} className="flex gap-4 border-b border-[#deded7] py-5 last:border-b-0 sm:gap-6">
+                    <div className="relative size-20 shrink-0 overflow-hidden bg-[#e9e7e0] sm:size-24">
+                      <Image src={item.image} alt={item.name} fill unoptimized sizes="96px" className="object-cover" />
                     </div>
-                    <p className="shrink-0 text-sm font-semibold">{currency.format(item.price * item.quantity)}</p>
-                  </div>
-                </article>
-              ))}
-            </section>
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs text-[#78847b]">{item.category}</p>
+                        <h3 className="mt-1 truncate text-sm font-semibold">{item.name}</h3>
+                        <p className="mt-1 text-xs text-neutral-500">Quantity {item.quantity}</p>
+                      </div>
+                      <p className="shrink-0 text-sm font-semibold">{currency.format(item.price * item.quantity)}</p>
+                    </div>
+                  </article>
+                ))}
+              </section>
+
+              <section aria-labelledby="shipping-heading" className="mt-8 border-t border-[#deded7] pt-6">
+                <h2 id="shipping-heading" className="text-lg font-semibold">Shipping details</h2>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className="text-sm font-medium">
+                  Full name
+                  <input
+                    name="fullName"
+                    autoComplete="name"
+                    required
+                    maxLength={120}
+                    className="mt-2 h-11 w-full border border-neutral-300 bg-white px-3 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                  />
+                </label>
+                <label className="text-sm font-medium">
+                  Phone number
+                  <input
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    maxLength={40}
+                    className="mt-2 h-11 w-full border border-neutral-300 bg-white px-3 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                  />
+                </label>
+                <label className="text-sm font-medium sm:col-span-2">
+                  Street address
+                  <textarea
+                    name="address"
+                    autoComplete="street-address"
+                    required
+                    maxLength={300}
+                    rows={2}
+                    className="mt-2 w-full resize-y border border-neutral-300 bg-white px-3 py-2 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                  />
+                </label>
+                <label className="text-sm font-medium">
+                  City
+                  <input
+                    name="city"
+                    autoComplete="address-level2"
+                    required
+                    maxLength={100}
+                    className="mt-2 h-11 w-full border border-neutral-300 bg-white px-3 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                  />
+                </label>
+                <label className="text-sm font-medium">
+                  Postal code
+                  <input
+                    name="postalCode"
+                    autoComplete="postal-code"
+                    required
+                    maxLength={20}
+                    className="mt-2 h-11 w-full border border-neutral-300 bg-white px-3 font-normal outline-none focus:border-[#31493e] focus:ring-2 focus:ring-[#31493e]/15"
+                  />
+                </label>
+                </div>
+              </section>
+            </div>
 
             <aside className="h-fit border-t-2 border-[#243b33] bg-white p-5 sm:p-6">
               <h2 className="text-lg font-semibold">Order summary</h2>
@@ -217,8 +295,7 @@ export default function CheckoutPage() {
               </div>
               <p className="mt-3 text-xs leading-5 text-[#78847b]">Final pricing is confirmed when your order is placed.</p>
               <button
-                type="button"
-                onClick={handlePlaceOrder}
+                type="submit"
                 disabled={isPlacingOrder || itemsWithInvalidIds.length > 0}
                 className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 bg-black px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33] disabled:cursor-wait disabled:opacity-60"
               >
@@ -226,7 +303,7 @@ export default function CheckoutPage() {
                 {isPlacingOrder ? 'Placing order…' : 'Place order'}
               </button>
             </aside>
-          </div>
+          </form>
         )}
       </div>
     </main>

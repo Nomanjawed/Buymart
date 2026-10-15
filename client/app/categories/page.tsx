@@ -155,8 +155,8 @@ export default function CategoriesPage() {
                     className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] group-focus-visible:scale-[1.04]"
                   />
                   <Link
-                    href={`/products/${product.categorySlug}`}
-                    aria-label={`Browse ${product.category} products`}
+                    href={`/categories/${product.id}`}
+                    aria-label={`View ${product.name}`}
                     className="absolute inset-0 z-10 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#31493e]"
                   />
                   <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-between gap-3 bg-linear-to-t from-[#14231f]/85 via-[#14231f]/10 to-transparent p-3 opacity-100 transition-opacity duration-300 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-4">
