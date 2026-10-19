@@ -1,5 +1,21 @@
 const mongoose = require("mongoose");
 
+const orderProductSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     userId: {
@@ -8,24 +24,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
-    products: [
-      {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          required: true,
-          min: 1,
-        },
-        calculatedPrice: {
-          type: Number,
-          required: true,
-        },
-      },
-    ],
+    products: [orderProductSchema],
 
     shippingDetails: {
       fullName: {
@@ -70,8 +69,8 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["stripe", "cod"],
-      default: "stripe",
+      enum: ["card", "cod"],
+      default: "cod",
       required: true, 
     },
 
