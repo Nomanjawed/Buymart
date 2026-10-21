@@ -3,7 +3,7 @@
 import axios from 'axios'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, LoaderCircle, LockKeyhole, ShoppingBag, Trash2 } from 'lucide-react'
+import { ArrowLeft, Banknote, CheckCircle2, CreditCard, LoaderCircle, LockKeyhole, ShoppingBag, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useCart } from '@/components/cart/CartProvider'
@@ -13,7 +13,11 @@ type PlacedOrder = {
   _id?: string
   id?: string
   orderNumber?: string
+  url?: string
+  sessionId?: string
 }
+
+type PaymentMethod = 'card' | 'cod'
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -26,6 +30,7 @@ export default function CheckoutPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [hasCustomerAccess, setHasCustomerAccess] = useState(false)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod')
   const [order, setOrder] = useState<PlacedOrder | null>(null)
   const [error, setError] = useState('')
   const itemsWithInvalidIds = items.filter((item) => !/^[0-9a-f]{24}$/i.test(item.id))
@@ -92,7 +97,16 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         shippingDetails,
+        paymentMethod,
       ) as PlacedOrder
+
+      if (paymentMethod === 'card') {
+        if (!result.url) {
+          throw new Error('The secure payment page could not be started. Please try again.')
+        }
+        window.location.assign(result.url)
+        return
+      }
 
       setOrder(result)
       clearCart()
@@ -285,6 +299,42 @@ export default function CheckoutPage() {
                 </label>
                 </div>
               </section>
+
+              <fieldset className="mt-8 border-t border-[#deded7] pt-6">
+                <legend className="text-lg font-semibold">Payment method</legend>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentMethod === 'cod' ? 'border-[#243b33] bg-[#eef2ee]' : 'border-neutral-300 bg-white hover:bg-neutral-50'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
+                      className="mt-1 accent-[#243b33]"
+                    />
+                    <Banknote size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-[#52645a]" />
+                    <span>
+                      <span className="block text-sm font-semibold">Cash on delivery</span>
+                      <span className="mt-1 block text-xs text-neutral-600">Pay when your order arrives.</span>
+                    </span>
+                  </label>
+                  <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentMethod === 'card' ? 'border-[#243b33] bg-[#eef2ee]' : 'border-neutral-300 bg-white hover:bg-neutral-50'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={paymentMethod === 'card'}
+                      onChange={() => setPaymentMethod('card')}
+                      className="mt-1 accent-[#243b33]"
+                    />
+                    <CreditCard size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-[#52645a]" />
+                    <span>
+                      <span className="block text-sm font-semibold">Card</span>
+                      <span className="mt-1 block text-xs text-neutral-600">Continue to secure Stripe checkout.</span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
             </div>
 
             <aside className="h-fit border-t-2 border-[#243b33] bg-white p-5 sm:p-6">
@@ -300,7 +350,9 @@ export default function CheckoutPage() {
                 className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 bg-black px-4 text-sm font-semibold text-white transition-colors hover:bg-[#365346] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243b33] disabled:cursor-wait disabled:opacity-60"
               >
                 {isPlacingOrder ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <LockKeyhole size={16} aria-hidden="true" />}
-                {isPlacingOrder ? 'Placing order…' : 'Place order'}
+                {isPlacingOrder
+                  ? paymentMethod === 'card' ? 'Opening secure checkout…' : 'Placing order…'
+                  : paymentMethod === 'card' ? 'Continue to payment' : 'Place order'}
               </button>
             </aside>
           </form>

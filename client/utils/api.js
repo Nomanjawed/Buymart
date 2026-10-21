@@ -59,8 +59,13 @@ export const trackOrderByNumber = async (orderNumber) => {
     return data?.order ?? data?.data?.order ?? data;
 };
 
-export const createOrder = async (products, shippingDetails) => {
-    const { data } = await api.post('/order', { products, shippingDetails });
+export const createOrder = async (products, shippingDetails, paymentMethod) => {
+    const { data } = await api.post('/order', { products, shippingDetails, paymentMethod });
+    return data?.order ?? data?.data?.order ?? data;
+};
+
+export const confirmOrderPayment = async (sessionId) => {
+    const { data } = await api.post('/order/confirm-payment', { sessionId });
     return data?.order ?? data?.data?.order ?? data;
 };
 
