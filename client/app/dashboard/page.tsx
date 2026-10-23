@@ -1,7 +1,8 @@
 'use client'
 
 import axios from 'axios'
-import { CalendarDays, LoaderCircle, LogOut, Mail, Package, Search, UserRound } from 'lucide-react'
+import Image from 'next/image'
+import { CalendarDays, Eye, LoaderCircle, LogOut, Mail, Package, Search, UserRound, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, type FormEvent } from 'react'
 import { getMe, getMyOrders, logout, trackOrderByNumber } from '@/utils/api'
@@ -18,9 +19,12 @@ type UserProfile = {
 type OrderItem = {
   _id?: string
   quantity: number
+  calculatedPrice?: number
   product?: {
     name?: string
     category?: string
+    image?: string
+    price?: number
   } | null
 }
 
@@ -28,8 +32,17 @@ type CustomerOrder = {
   _id: string
   orderNumber?: string
   orderStatus?: string
+  paymentMethod?: string
+  paymentStatus?: string
   createdAt?: string
   updatedAt?: string
+  shippingDetails?: {
+    fullName?: string
+    phone?: string
+    address?: string
+    city?: string
+    postalCode?: string
+  }
   products: OrderItem[]
 }
 
@@ -38,6 +51,11 @@ type TrackedOrder = {
   orderStatus: string
   updatedAt?: string
 }
+
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+})
 
 function formatDate(value?: string) {
   if (!value) return 'Date unavailable'
@@ -48,10 +66,17 @@ function formatDate(value?: string) {
     : new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(date)
 }
 
+function getOrderTotal(order: CustomerOrder) {
+  return order.products.reduce((total, item) => {
+    return total + (item.calculatedPrice ?? (item.product?.price ?? 0) * item.quantity)
+  }, 0)
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [orders, setOrders] = useState<CustomerOrder[]>([])
+  const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [pageError, setPageError] = useState('')
   const [ordersError, setOrdersError] = useState('')
@@ -283,7 +308,9 @@ export default function DashboardPage() {
                   <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <div>
                       <h3 className="text-sm font-semibold">{order.orderNumber || `Order #${order._id.slice(-8).toUpperCase()}`}</h3>
-                      {order.orderStatus && <p className="mt-1 text-xs font-medium capitalize text-[#52645a]">{order.orderStatus}</p>}
+                      <p className="mt-1 text-xs font-medium capitalize text-[#52645a]">
+                        {order.orderStatus || 'pending'} · Payment {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                      </p>
                     </div>
                     <time className="text-xs text-neutral-500" dateTime={order.createdAt}>
                       {formatDate(order.createdAt)}
@@ -302,12 +329,141 @@ export default function DashboardPage() {
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-4 flex justify-end border-t border-neutral-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                      className="inline-flex h-9 items-center gap-2 border border-neutral-300 px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31493e]"
+                    >
+                      <Eye size={16} aria-hidden="true" /> View order
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
           )}
         </section>
       </div>
+
+      {selectedOrder && (
+        <div
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedOrder(null)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setSelectedOrder(null)
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#101b17]/55 p-4"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="customer-order-receipt-title"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-white shadow-2xl"
+          >
+            <header className="flex items-start justify-between border-b border-neutral-200 px-5 py-4 sm:px-7">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#78847b]">Order receipt</p>
+                <h2 id="customer-order-receipt-title" className="mt-1 text-lg font-semibold">
+                  {selectedOrder.orderNumber || `Order #${selectedOrder._id.slice(-8).toUpperCase()}`}
+                </h2>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                aria-label="Close order receipt"
+                onClick={() => setSelectedOrder(null)}
+                className="inline-flex size-9 items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="space-y-6 px-5 py-5 sm:px-7">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Order status</p>
+                  <p className="mt-1 text-sm font-semibold capitalize">{selectedOrder.orderStatus || 'pending'}</p>
+                  <p className="mt-1 text-xs text-neutral-500">Placed {formatDate(selectedOrder.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Payment</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {selectedOrder.paymentMethod === 'cod' ? 'Cash on delivery' : selectedOrder.paymentMethod === 'card' ? 'Card' : 'Not provided'}
+                  </p>
+                  <p className="mt-1 text-xs capitalize text-neutral-500">
+                    {selectedOrder.paymentStatus === 'paid' ? 'Paid' : (selectedOrder.paymentStatus || 'pending').replace(/_/g, ' ')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-neutral-200 pt-5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Shipping details</h3>
+                <dl className="mt-3 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs text-neutral-500">Full name</dt>
+                    <dd className="mt-1 font-medium">{selectedOrder.shippingDetails?.fullName || user?.fullname || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">Email address</dt>
+                    <dd className="mt-1 break-all">{user?.email || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">Phone</dt>
+                    <dd className="mt-1">{selectedOrder.shippingDetails?.phone || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">City / postal code</dt>
+                    <dd className="mt-1">{[selectedOrder.shippingDetails?.city, selectedOrder.shippingDetails?.postalCode].filter(Boolean).join(', ') || 'Not provided'}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs text-neutral-500">Address</dt>
+                    <dd className="mt-1 wrap-break-word">{selectedOrder.shippingDetails?.address || 'Not provided'}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="border-t border-neutral-200 pt-5">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Products</h3>
+                <ul className="mt-3 divide-y divide-neutral-200 border-y border-neutral-200">
+                  {selectedOrder.products.map((item, index) => {
+                    const lineTotal = item.calculatedPrice ?? (item.product?.price ?? 0) * item.quantity
+                    const unitPrice = item.quantity > 0 ? lineTotal / item.quantity : 0
+
+                    return (
+                      <li key={item._id || `${selectedOrder._id}-${index}`} className="flex items-center justify-between gap-4 py-3 text-sm">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="relative size-14 shrink-0 overflow-hidden bg-neutral-100">
+                            <Image
+                              src={item.product?.image || '/Hero.png'}
+                              alt={item.product?.name || 'Ordered product'}
+                              fill
+                              unoptimized
+                              sizes="56px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{item.product?.name || 'Product unavailable'}</p>
+                            {item.product?.category && <p className="mt-0.5 text-xs text-neutral-500">{item.product.category}</p>}
+                            <p className="mt-0.5 text-xs text-neutral-500">Qty {item.quantity} · {currency.format(unitPrice)} each</p>
+                          </div>
+                        </div>
+                        <p className="shrink-0 font-semibold">{currency.format(lineTotal)}</p>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <div className="flex justify-between gap-4 pt-4 text-sm font-semibold">
+                  <span>Order total</span>
+                  <span>{currency.format(getOrderTotal(selectedOrder))}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

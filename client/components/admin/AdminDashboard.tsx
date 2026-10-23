@@ -50,6 +50,8 @@ type AdminOrder = {
   _id: string
   orderNumber?: string
   orderStatus?: OrderStatus
+  paymentMethod?: 'card' | 'cod'
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded'
   createdAt?: string
   userId?: { fullname?: string; username?: string; email?: string } | null
   shippingDetails?: {
@@ -859,6 +861,10 @@ export default function AdminDashboard() {
                           <td className="px-5 py-4">
                             <p className="text-sm font-medium">{order.shippingDetails?.fullName || order.userId?.fullname || order.userId?.username || 'Customer unavailable'}</p>
                             <p className="mt-1 text-xs text-neutral-500">{order.userId?.email || 'No email'}</p>
+                            <p className="mt-1 text-xs capitalize text-neutral-500">
+                              {order.paymentMethod === 'card' ? 'Card' : order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Payment method unavailable'}
+                              {' · Payment '}{order.paymentStatus === 'paid' ? 'Paid' : (order.paymentStatus || 'pending')}
+                            </p>
                           </td>
                           <td className="max-w-64 px-5 py-4 text-sm">
                             <p>{order.products.reduce((count, item) => count + item.quantity, 0)} items</p>
@@ -963,6 +969,24 @@ export default function AdminDashboard() {
                 <p className="mt-0.5 break-all text-sm text-neutral-600">
                   {selectedOrder.userId?.email || 'No email available'}
                 </p>
+              </div>
+
+              <div className="border-t border-neutral-200 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Payment</p>
+                <dl className="mt-2 grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs text-neutral-500">Method</dt>
+                    <dd className="mt-0.5 font-medium">
+                      {selectedOrder.paymentMethod === 'card' ? 'Card' : selectedOrder.paymentMethod === 'cod' ? 'Cash on delivery' : 'Not available'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-neutral-500">Payment status</dt>
+                    <dd className="mt-0.5 font-medium capitalize">
+                      {selectedOrder.paymentStatus === 'paid' ? 'Paid' : (selectedOrder.paymentStatus || 'pending')}
+                    </dd>
+                  </div>
+                </dl>
               </div>
 
               <div>
