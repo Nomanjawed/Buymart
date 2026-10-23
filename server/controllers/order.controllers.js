@@ -96,7 +96,7 @@ const createOrder = async (req, res) => {
       };
     });
 
-    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000")
+    const frontendUrl = (process.env.CLIENT_URL || "http://localhost:3000")
       .split(",")[0]
       .trim();
 
